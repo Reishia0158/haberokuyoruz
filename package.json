@@ -1,0 +1,17 @@
+{
+  "name": "haberokuyoruz",
+  "version": "0.1.0",
+  "description": "Basit haber takip sitesi",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "haber",
+    "rss",
+    "ozet"
+  ],
+  "author": "",
+  "license": "MIT"
+}

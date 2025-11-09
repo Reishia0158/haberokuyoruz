@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Haber Okuyoruz</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero__content">
+        <p class="hero__eyebrow">haberokuyoruz.com</p>
+        <h1>Türkiye gündemini tek ekranda oku</h1>
+        <p class="hero__lead">
+          TRT, Habertürk, Sözcü, NTV ve daha fazlasından anlık başlıklar; basit yapay zeka destekli özetler ile
+          kalabalık haber sitelerini gezmeden gündemi takip et.
+        </p>
+        <div class="controls">
+          <label class="field">
+            <span>Kelime ara</span>
+            <input type="search" id="searchInput" placeholder="ör. deprem, seçim, ekonomi" />
+          </label>
+          <label class="field">
+            <span>Kaynak seç (opsiyonel)</span>
+            <select id="sourceSelect">
+              <option value="">Tümü</option>
+            </select>
+          </label>
+          <button id="refreshBtn" class="primary">Yenile</button>
+        </div>
+        <p class="meta" id="statusText">Son veriler yükleniyor...</p>
+      </div>
+    </header>
+
+    <main>
+      <section id="newsList" class="news-grid"></section>
+      <div class="empty-state" id="emptyState" hidden>
+        <p>Aradığınız kriterlere uygun haber bulunamadı.</p>
+      </div>
+    </main>
+
+    <template id="newsCardTemplate">
+      <article class="news-card">
+        <div class="news-card__chip">
+          <span class="source"></span>
+          <span class="time"></span>
+        </div>
+        <h2 class="title"></h2>
+        <p class="summary"></p>
+        <details class="details">
+          <summary>Daha fazla oku</summary>
+          <p class="description"></p>
+        </details>
+        <a class="cta" target="_blank" rel="noopener noreferrer">Haberi kaynağında aç →</a>
+      </article>
+    </template>
+
+    <footer>
+      <p>
+        Haberler ilgili yayın kuruluşunun RSS kaynaklarından alınır. Özetler otomatik oluşturulur; doğrulamak için her
+        zaman kaynağa gidin.
+      </p>
+    </footer>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
