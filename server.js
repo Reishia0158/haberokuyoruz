@@ -9,9 +9,17 @@ const MAX_RESULTS = 60;
 
 const RSS_SOURCES = [
   { name: 'TRT Haber', url: 'https://www.trthaber.com/manset.rss' },
+  { name: 'Mynet Haber', url: 'https://www.mynet.com/haber/rss/kategori/gundem' },
+  { name: 'SonDakika.com', url: 'https://www.sondakika.com/rss/' },
+  { name: 'NTV', url: 'https://www.ntv.com.tr/gundem.rss' },
+  { name: 'Karaman Gündem', url: 'https://www.karamangundem.com/rss' },
+  { name: 'Karaman Haber', url: 'https://www.karamanhaber.com/feed/' },
+  { name: 'Karamandan', url: 'https://www.karamandan.com/rss' },
+  { name: 'Anadolu Ajansı', url: 'https://www.aa.com.tr/tr/rss/default?cat=guncel' },
+  { name: 'En Son Haber', url: 'https://www.ensonhaber.com/rss/ensonhaber.xml' },
   { name: 'Habertürk', url: 'https://www.haberturk.com/rss/manset.xml' },
-  { name: 'Sözcü', url: 'https://www.sozcu.com.tr/rss/anasayfa.xml' },
-  { name: 'NTV', url: 'https://www.ntv.com.tr/gundem.rss' }
+  { name: 'Sabah', url: 'https://www.sabah.com.tr/rss/gundem.xml' },
+  { name: 'Sözcü', url: 'https://www.sozcu.com.tr/rss/anasayfa.xml' }
 ];
 
 const STOP_WORDS = new Set([
