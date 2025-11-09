@@ -169,10 +169,12 @@ async function getNewsItems() {
     }
   }
 
-  collected.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
-  cache.items = collected;
+  const deduped = dedupeItems(collected);
+  deduped.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+
+  cache.items = deduped;
   cache.timestamp = now;
-  return collected;
+  return deduped;
 }
 
 async function fetchSource(source) {
@@ -201,8 +203,10 @@ function parseRss(xml) {
     const title = getTagValue(itemBlock, 'title');
     const link = getTagValue(itemBlock, 'link');
     const pubDate = new Date(getTagValue(itemBlock, 'pubDate') || getTagValue(itemBlock, 'dc:date') || Date.now()).toISOString();
-    const description = stripHtml(getTagValue(itemBlock, 'description') || getTagValue(itemBlock, 'content:encoded') || '');
+    const rawDescription = getTagValue(itemBlock, 'description') || getTagValue(itemBlock, 'content:encoded') || '';
+    const description = stripHtml(rawDescription);
     const summary = summarize(description || title);
+    const preview = createPreview(summary || description || title);
 
     items.push({
       id: link || `${title}-${pubDate}`,
@@ -210,7 +214,8 @@ function parseRss(xml) {
       link,
       publishedAt: pubDate,
       description,
-      summary
+      summary,
+      preview
     });
   }
 
@@ -280,4 +285,50 @@ function summarize(text = '', sentenceCount = 2) {
     .map((item) => item.sentence);
 
   return selected.join(' ');
+}
+
+function createPreview(text = '', limit = 220) {
+  if (!text) return '';
+  const trimmed = text.trim();
+  if (trimmed.length <= limit) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, limit).trim()}…`;
+}
+
+function dedupeItems(items = []) {
+  const map = new Map();
+
+  for (const item of items) {
+    const key = normalizeKey(item);
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, { ...item, sources: [item.source] });
+      continue;
+    }
+
+    if (!existing.sources.includes(item.source)) {
+      existing.sources.push(item.source);
+    }
+
+    if (new Date(item.publishedAt) < new Date(existing.publishedAt)) {
+      existing.publishedAt = item.publishedAt;
+    }
+
+    if (!existing.description && item.description) existing.description = item.description;
+    if (!existing.summary && item.summary) existing.summary = item.summary;
+    if (!existing.preview && item.preview) existing.preview = item.preview;
+    if (!existing.link && item.link) existing.link = item.link;
+  }
+
+  return Array.from(map.values()).map((item) => ({
+    ...item,
+    source: item.sources[0],
+    sources: item.sources
+  }));
+}
+
+function normalizeKey(item) {
+  const base = item.link || item.title;
+  return (base || '').toLowerCase().replace(/\s+/g, ' ').trim();
 }

@@ -64,11 +64,29 @@ function renderNews(items) {
 
   items.forEach((item) => {
     const node = newsCardTemplate.content.cloneNode(true);
-    node.querySelector('.source').textContent = item.source;
+    const sources = Array.isArray(item.sources) && item.sources.length > 0 ? item.sources : [item.source];
+    const sourceLabel =
+      sources.length > 1 ? `${sources[0]} +${sources.length - 1}` : sources.filter(Boolean).join('');
+    const sourceEl = node.querySelector('.source');
+    sourceEl.textContent = sourceLabel || 'Kaynak bilinmiyor';
+    sourceEl.title = sources.join(', ');
+
     node.querySelector('.time').textContent = formatRelativeTime(item.publishedAt);
     node.querySelector('.title').textContent = item.title;
-    node.querySelector('.summary').textContent = item.summary || item.description?.slice(0, 180);
-    node.querySelector('.description').textContent = item.description || 'Detay bulunamadı.';
+    const summaryText = (item.preview || item.summary || item.description?.slice(0, 200) || 'Özet bulunamadı.').trim();
+    const detailText = (item.description || item.summary || '').trim();
+
+    node.querySelector('.summary').textContent = summaryText;
+
+    const detailsEl = node.querySelector('.details');
+    const descriptionEl = node.querySelector('.description');
+    if (!detailText || detailText === summaryText) {
+      detailsEl.hidden = true;
+    } else {
+      detailsEl.hidden = false;
+      descriptionEl.textContent = detailText;
+    }
+
     const link = node.querySelector('.cta');
     link.href = item.link;
     fragment.appendChild(node);
