@@ -1,7 +1,9 @@
+import './lib/env.js';
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { summarizeWithGemini, isGeminiEnabled } from './lib/gemini.js';
 
 const PORT = process.env.PORT || 3000;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -58,6 +60,8 @@ const STOP_WORDS = new Set([
   'zaten',
   'ise'
 ]);
+
+const GEMINI_SUMMARY_MAX_ITEMS = Number(process.env.GEMINI_SUMMARY_MAX_ITEMS || 20);
 
 const cache = {
   timestamp: 0,
@@ -171,6 +175,7 @@ async function getNewsItems() {
 
   const deduped = dedupeItems(collected);
   deduped.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+  await attachGeminiSummaries(deduped);
 
   cache.items = deduped;
   cache.timestamp = now;
@@ -331,4 +336,21 @@ function dedupeItems(items = []) {
 function normalizeKey(item) {
   const base = item.link || item.title;
   return (base || '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+async function attachGeminiSummaries(items) {
+  if (!isGeminiEnabled) return;
+
+  const limit = Math.min(GEMINI_SUMMARY_MAX_ITEMS, items.length);
+  for (let index = 0; index < limit; index += 1) {
+    const item = items[index];
+    if (!item || item.aiSummary || !item.description) {
+      continue;
+    }
+
+    const summary = await summarizeWithGemini(item);
+    if (summary) {
+      item.aiSummary = summary;
+    }
+  }
 }

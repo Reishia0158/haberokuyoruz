@@ -23,9 +23,30 @@ npm start
 
 > Not: Sunucu ayağa kalkınca ilk `/api/news` isteğinde kaynaklar okunur. RSS sağlayıcıları erişime kapalıysa veya ağ kısıtlıysa liste boş dönebilir.
 
+## Yapay zeka özetleri (Gemini)
+
+Google Gemini API'si için ücretsiz kotanı kullanarak haber başına 1-2 cümlelik kısa özetler alabilirsin.
+
+1. [Google AI Studio](https://aistudio.google.com/) üzerinden bir API anahtarı oluştur.
+2. Anahtarı `.env` dosyasına ya da kabuğunda ortam değişkeni olarak tanımla:
+
+   ```bash
+   # .env dosyası (aynı klasöre kaydet)
+   GEMINI_API_KEY="AI...senin_anahtarın..."
+   GEMINI_MODEL="gemini-1.5-flash"          # opsiyonel
+   GEMINI_SUMMARY_MAX_ITEMS=20              # opsiyonel, özetlenecek haber sayısı
+
+   # veya tek seferlik terminalden
+   export GEMINI_API_KEY="AI...senin_anahtarın..."
+   npm start
+   ```
+
+3. Anahtar tanımlı değilse uygulama eski otomatik (kurallı) özetleme ile devam eder.
+
 ## Yapı
 
 - `server.js`: RSS çekme, önbellek, özetleme ve statik dosya servisi.
+- `lib/gemini.js`: Gemini API üzerinden kısa AI özetleri.
 - `public/`: HTML, CSS ve tarayıcı tarafı JS.
 
 ## Özelleştirme

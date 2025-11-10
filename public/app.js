@@ -73,6 +73,18 @@ function renderNews(items) {
 
     node.querySelector('.time').textContent = formatRelativeTime(item.publishedAt);
     node.querySelector('.title').textContent = item.title;
+    const aiSummaryText = (item.aiSummary || '').trim();
+    const aiSummaryEl = node.querySelector('.ai-summary');
+    const aiSummaryBodyEl = node.querySelector('.ai-summary__text');
+
+    if (aiSummaryText) {
+      aiSummaryEl.hidden = false;
+      aiSummaryBodyEl.textContent = aiSummaryText;
+    } else {
+      aiSummaryEl.hidden = true;
+      aiSummaryBodyEl.textContent = '';
+    }
+
     const summaryText = (item.preview || item.summary || item.description?.slice(0, 200) || 'Özet bulunamadı.').trim();
     const detailText = (item.description || item.summary || '').trim();
 
