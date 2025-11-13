@@ -56,10 +56,24 @@ applyTheme(currentTheme);
 themeToggle.addEventListener('click', toggleTheme);
 
 // Sayfa yüklendiğinde body overflow'u normal yap (modal açık kalmışsa)
-document.addEventListener('DOMContentLoaded', () => {
+function ensureModalClosed() {
   document.body.style.overflow = '';
   if (newsModal) {
     newsModal.hidden = true;
+    newsModal.style.display = 'none';
+    newsModal.style.visibility = 'hidden';
+    newsModal.style.pointerEvents = 'none';
+    newsModal.style.zIndex = '-1';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', ensureModalClosed);
+window.addEventListener('load', ensureModalClosed);
+
+// Sayfa görünür olduğunda da kontrol et
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    ensureModalClosed();
   }
 });
 
@@ -526,12 +540,16 @@ function openNewsModal(item) {
   });
   
   newsModal.hidden = false;
+  newsModal.style.display = 'flex';
+  newsModal.style.visibility = 'visible';
   document.body.style.overflow = 'hidden';
 }
 
 function closeNewsModal() {
   if (!newsModal) return;
   newsModal.hidden = true;
+  newsModal.style.display = 'none';
+  newsModal.style.visibility = 'hidden';
   document.body.style.overflow = '';
 }
 

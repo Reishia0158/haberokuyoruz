@@ -522,6 +522,15 @@ footer {
 
 .modal[hidden] {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
+.modal:not([hidden]) {
+  display: flex !important;
+  z-index: 1000 !important;
 }
 
 .modal__overlay {
