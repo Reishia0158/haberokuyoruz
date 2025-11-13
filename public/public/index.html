@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Haber Okuyoruz</title>
+    <meta name="description" content="Türkiye gündemini tek ekranda oku. TRT, Habertürk, Sözcü, NTV ve daha fazlasından anlık başlıklar." />
+    <meta name="theme-color" content="#e63946" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero__content">
+        <p class="hero__eyebrow">haberokuyoruz.com</p>
+        <h1>Türkiye gündemini tek ekranda oku</h1>
+        <p class="hero__lead">
+          TRT, Habertürk, Sözcü, NTV ve daha fazlasından anlık başlıklar; basit yapay zeka destekli özetler ile
+          kalabalık haber sitelerini gezmeden gündemi takip et.
+        </p>
+        <div class="controls">
+          <label class="field">
+            <span>Kelime ara</span>
+            <input type="search" id="searchInput" placeholder="ör. deprem, seçim, ekonomi" />
+          </label>
+          <label class="field">
+            <span>Kategori</span>
+            <select id="categorySelect">
+              <option value="">Tümü</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Kaynak</span>
+            <select id="sourceSelect">
+              <option value="">Tümü</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Tarih</span>
+            <select id="dateSelect">
+              <option value="">Tümü</option>
+              <option value="today">Bugün</option>
+              <option value="week">Bu Hafta</option>
+              <option value="month">Bu Ay</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Sırala</span>
+            <select id="sortSelect">
+              <option value="newest">Yeniden Eskiye</option>
+              <option value="oldest">Eskiden Yeniye</option>
+            </select>
+          </label>
+          <button id="refreshBtn" class="primary">Yenile</button>
+          <button id="showFavoritesBtn" class="primary secondary">⭐ Favoriler</button>
+        </div>
+        <div class="trending-topics" id="trendingTopics" hidden>
+          <span class="trending-label">🔥 Trend Konular:</span>
+          <div class="trending-tags" id="trendingTags"></div>
+        </div>
+        <div class="theme-toggle">
+          <button id="themeToggle" class="theme-toggle__btn" aria-label="Tema değiştir">
+            <span class="theme-toggle__icon">🌙</span>
+          </button>
+        </div>
+        <p class="meta" id="statusText">Son veriler yükleniyor...</p>
+      </div>
+    </header>
+
+    <main>
+      <section id="newsList" class="news-grid"></section>
+      <div id="loadingSkeleton" class="news-grid" hidden>
+        <article class="news-card skeleton">
+          <div class="skeleton__chip"></div>
+          <div class="skeleton__title"></div>
+          <div class="skeleton__line"></div>
+          <div class="skeleton__line"></div>
+          <div class="skeleton__line short"></div>
+        </article>
+        <article class="news-card skeleton">
+          <div class="skeleton__chip"></div>
+          <div class="skeleton__title"></div>
+          <div class="skeleton__line"></div>
+          <div class="skeleton__line"></div>
+          <div class="skeleton__line short"></div>
+        </article>
+        <article class="news-card skeleton">
+          <div class="skeleton__chip"></div>
+          <div class="skeleton__title"></div>
+          <div class="skeleton__line"></div>
+          <div class="skeleton__line"></div>
+          <div class="skeleton__line short"></div>
+        </article>
+      </div>
+      <div class="pagination" id="pagination" hidden>
+        <button id="prevBtn" class="pagination__btn" disabled>← Önceki</button>
+        <span class="pagination__info" id="pageInfo"></span>
+        <button id="nextBtn" class="pagination__btn">Sonraki →</button>
+      </div>
+      <div class="empty-state" id="emptyState" hidden>
+        <p>Aradığınız kriterlere uygun haber bulunamadı.</p>
+      </div>
+    </main>
+
+    <template id="newsCardTemplate">
+      <article class="news-card">
+        <div class="news-card__image-container" hidden>
+          <img class="news-card__image" src="" alt="" loading="lazy" />
+        </div>
+        <div class="news-card__header">
+          <div class="news-card__chip">
+            <span class="category-badge"></span>
+            <span class="source"></span>
+            <span class="time"></span>
+            <span class="reading-time"></span>
+          </div>
+          <button class="favorite-btn" aria-label="Favorilere ekle">
+            <span class="favorite-icon">♡</span>
+          </button>
+        </div>
+        <h2 class="title"></h2>
+        <div class="ai-summary" hidden>
+          <span class="ai-summary__label">🤖 AI Özeti</span>
+          <p class="ai-summary__text"></p>
+        </div>
+        <p class="summary"></p>
+        <details class="details">
+          <summary>Daha fazla oku</summary>
+          <p class="description"></p>
+        </details>
+        <div class="news-card__actions">
+          <a class="cta" target="_blank" rel="noopener noreferrer">Haberi kaynağında aç →</a>
+          <div class="share-buttons">
+            <button class="share-btn" data-platform="twitter" aria-label="Twitter'da paylaş">🐦</button>
+            <button class="share-btn" data-platform="facebook" aria-label="Facebook'ta paylaş">📘</button>
+            <button class="share-btn" data-platform="whatsapp" aria-label="WhatsApp'ta paylaş">💬</button>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <div id="newsModal" class="modal" hidden>
+      <div class="modal__overlay"></div>
+      <div class="modal__content">
+        <button class="modal__close" aria-label="Kapat">×</button>
+        <div id="modalContent"></div>
+      </div>
+    </div>
+
+    <footer>
+      <p>
+        Haberler ilgili yayın kuruluşunun RSS kaynaklarından alınır. Özetler otomatik oluşturulur; doğrulamak için her
+        zaman kaynağa gidin.
+      </p>
+    </footer>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
