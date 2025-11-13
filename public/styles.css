@@ -520,6 +520,10 @@ footer {
   padding: 1rem;
 }
 
+.modal[hidden] {
+  display: none !important;
+}
+
 .modal__overlay {
   position: absolute;
   top: 0;

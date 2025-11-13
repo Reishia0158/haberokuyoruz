@@ -20,7 +20,12 @@ const trendingTopics = document.getElementById('trendingTopics');
 const trendingTags = document.getElementById('trendingTags');
 const newsModal = document.getElementById('newsModal');
 const modalContent = document.getElementById('modalContent');
-const modalClose = newsModal.querySelector('.modal__close');
+const modalClose = newsModal ? newsModal.querySelector('.modal__close') : null;
+
+// Modal'ın başlangıçta kapalı olduğundan emin ol
+if (newsModal) {
+  newsModal.hidden = true;
+}
 
 let debounceTimer;
 let currentPage = 1;
@@ -49,6 +54,14 @@ function toggleTheme() {
 // Sayfa yüklendiğinde temayı uygula
 applyTheme(currentTheme);
 themeToggle.addEventListener('click', toggleTheme);
+
+// Sayfa yüklendiğinde body overflow'u normal yap (modal açık kalmışsa)
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.style.overflow = '';
+  if (newsModal) {
+    newsModal.hidden = true;
+  }
+});
 
 // Service Worker kaydı (PWA)
 if ('serviceWorker' in navigator) {
@@ -474,6 +487,8 @@ const categoryColors = {
 };
 
 function openNewsModal(item) {
+  if (!newsModal || !modalContent) return;
+  
   const category = item.category || 'gündem';
   const categoryColor = categoryColors[category] || categoryColors['gündem'];
   const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
@@ -515,12 +530,27 @@ function openNewsModal(item) {
 }
 
 function closeNewsModal() {
+  if (!newsModal) return;
   newsModal.hidden = true;
   document.body.style.overflow = '';
 }
 
-modalClose.addEventListener('click', closeNewsModal);
-newsModal.querySelector('.modal__overlay').addEventListener('click', closeNewsModal);
+// ESC tuşu ile modal'ı kapat
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && newsModal && !newsModal.hidden) {
+    closeNewsModal();
+  }
+});
+
+if (modalClose) {
+  modalClose.addEventListener('click', closeNewsModal);
+}
+if (newsModal) {
+  const overlay = newsModal.querySelector('.modal__overlay');
+  if (overlay) {
+    overlay.addEventListener('click', closeNewsModal);
+  }
+}
 window.shareNews = shareNews;
 
 categorySelect.addEventListener('change', () => {

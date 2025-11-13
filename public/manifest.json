@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 {
   "name": "Haber Okuyoruz",
   "short_name": "HaberOkuyoruz",
@@ -23,3 +24,30 @@
   ]
 }
 
+=======
+{
+  "name": "Haber Okuyoruz",
+  "short_name": "HaberOkuyoruz",
+  "description": "Türkiye gündemini tek ekranda oku",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f7fb",
+  "theme_color": "#e63946",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
+>>>>>>> Stashed changes
