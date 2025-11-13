@@ -24,13 +24,39 @@
             <input type="search" id="searchInput" placeholder="ör. deprem, seçim, ekonomi" />
           </label>
           <label class="field">
-            <span>Kaynak seç (opsiyonel)</span>
+            <span>Kategori</span>
+            <select id="categorySelect">
+              <option value="">Tümü</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Kaynak</span>
             <select id="sourceSelect">
               <option value="">Tümü</option>
             </select>
           </label>
+          <label class="field">
+            <span>Tarih</span>
+            <select id="dateSelect">
+              <option value="">Tümü</option>
+              <option value="today">Bugün</option>
+              <option value="week">Bu Hafta</option>
+              <option value="month">Bu Ay</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Sırala</span>
+            <select id="sortSelect">
+              <option value="newest">Yeniden Eskiye</option>
+              <option value="oldest">Eskiden Yeniye</option>
+            </select>
+          </label>
           <button id="refreshBtn" class="primary">Yenile</button>
           <button id="showFavoritesBtn" class="primary secondary">⭐ Favoriler</button>
+        </div>
+        <div class="trending-topics" id="trendingTopics" hidden>
+          <span class="trending-label">🔥 Trend Konular:</span>
+          <div class="trending-tags" id="trendingTags"></div>
         </div>
         <div class="theme-toggle">
           <button id="themeToggle" class="theme-toggle__btn" aria-label="Tema değiştir">
@@ -78,10 +104,15 @@
 
     <template id="newsCardTemplate">
       <article class="news-card">
+        <div class="news-card__image-container" hidden>
+          <img class="news-card__image" src="" alt="" loading="lazy" />
+        </div>
         <div class="news-card__header">
           <div class="news-card__chip">
+            <span class="category-badge"></span>
             <span class="source"></span>
             <span class="time"></span>
+            <span class="reading-time"></span>
           </div>
           <button class="favorite-btn" aria-label="Favorilere ekle">
             <span class="favorite-icon">♡</span>
@@ -89,7 +120,7 @@
         </div>
         <h2 class="title"></h2>
         <div class="ai-summary" hidden>
-          <span class="ai-summary__label">Yapay zeka özeti</span>
+          <span class="ai-summary__label">🤖 AI Özeti</span>
           <p class="ai-summary__text"></p>
         </div>
         <p class="summary"></p>
@@ -97,9 +128,24 @@
           <summary>Daha fazla oku</summary>
           <p class="description"></p>
         </details>
-        <a class="cta" target="_blank" rel="noopener noreferrer">Haberi kaynağında aç →</a>
+        <div class="news-card__actions">
+          <a class="cta" target="_blank" rel="noopener noreferrer">Haberi kaynağında aç →</a>
+          <div class="share-buttons">
+            <button class="share-btn" data-platform="twitter" aria-label="Twitter'da paylaş">🐦</button>
+            <button class="share-btn" data-platform="facebook" aria-label="Facebook'ta paylaş">📘</button>
+            <button class="share-btn" data-platform="whatsapp" aria-label="WhatsApp'ta paylaş">💬</button>
+          </div>
+        </div>
       </article>
     </template>
+
+    <div id="newsModal" class="modal" hidden>
+      <div class="modal__overlay"></div>
+      <div class="modal__content">
+        <button class="modal__close" aria-label="Kapat">×</button>
+        <div id="modalContent"></div>
+      </div>
+    </div>
 
     <footer>
       <p>

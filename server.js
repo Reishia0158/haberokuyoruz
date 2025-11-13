@@ -7,21 +7,38 @@ import { summarizeWithGemini, isGeminiEnabled } from './lib/gemini.js';
 
 const PORT = process.env.PORT || 3000;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-const MAX_RESULTS = 60;
+const MAX_RESULTS = 200;
 
 const RSS_SOURCES = [
-  { name: 'TRT Haber', url: 'https://www.trthaber.com/manset.rss' },
-  { name: 'Mynet Haber', url: 'https://www.mynet.com/haber/rss/kategori/gundem' },
-  { name: 'SonDakika.com', url: 'https://www.sondakika.com/rss/' },
-  { name: 'NTV', url: 'https://www.ntv.com.tr/gundem.rss' },
-  { name: 'Karaman Gündem', url: 'https://www.karamangundem.com/rss' },
-  { name: 'Karaman Haber', url: 'https://www.karamanhaber.com/feed/' },
-  { name: 'Karamandan', url: 'https://www.karamandan.com/rss' },
-  { name: 'Anadolu Ajansı', url: 'https://www.aa.com.tr/tr/rss/default?cat=guncel' },
-  { name: 'En Son Haber', url: 'https://www.ensonhaber.com/rss/ensonhaber.xml' },
-  { name: 'Habertürk', url: 'https://www.haberturk.com/rss/manset.xml' },
-  { name: 'Sabah', url: 'https://www.sabah.com.tr/rss/gundem.xml' },
-  { name: 'Sözcü', url: 'https://www.sozcu.com.tr/rss/anasayfa.xml' }
+  { name: 'TRT Haber', url: 'https://www.trthaber.com/manset.rss', category: 'gündem' },
+  { name: 'Anadolu Ajansı', url: 'https://www.aa.com.tr/tr/rss/default?cat=guncel', category: 'gündem' },
+  { name: 'Habertürk', url: 'https://www.haberturk.com/rss/manset.xml', category: 'gündem' },
+  { name: 'NTV', url: 'https://www.ntv.com.tr/gundem.rss', category: 'gündem' },
+  { name: 'Sözcü', url: 'https://www.sozcu.com.tr/rss/anasayfa.xml', category: 'gündem' },
+  { name: 'Sabah', url: 'https://www.sabah.com.tr/rss/gundem.xml', category: 'gündem' },
+  { name: 'Hürriyet', url: 'https://www.hurriyet.com.tr/rss/gundem', category: 'gündem' },
+  { name: 'Milliyet', url: 'https://www.milliyet.com.tr/rss/rssNew/gundemRSS.xml', category: 'gündem' },
+  { name: 'Cumhuriyet', url: 'https://www.cumhuriyet.com.tr/rss/son_dakika.xml', category: 'gündem' },
+  { name: 'Yeni Şafak', url: 'https://www.yenisafak.com/rss/gundem', category: 'gündem' },
+  { name: 'Takvim', url: 'https://www.takvim.com.tr/rss/guncel.xml', category: 'gündem' },
+  { name: 'Star', url: 'https://www.star.com.tr/rss/gundem', category: 'gündem' },
+  { name: 'Mynet Haber', url: 'https://www.mynet.com/haber/rss/kategori/gundem', category: 'gündem' },
+  { name: 'SonDakika.com', url: 'https://www.sondakika.com/rss/', category: 'gündem' },
+  { name: 'En Son Haber', url: 'https://www.ensonhaber.com/rss/ensonhaber.xml', category: 'gündem' },
+  { name: 'CNN Türk', url: 'https://www.cnnturk.com/feed/rss/turkiye/news', category: 'gündem' },
+  { name: 'TRT Spor', url: 'https://www.trtspor.com.tr/rss/spor.xml', category: 'spor' },
+  { name: 'Fanatik', url: 'https://www.fanatik.com.tr/rss/spor.xml', category: 'spor' },
+  { name: 'NTV Spor', url: 'https://www.ntvspor.net/rss/spor.xml', category: 'spor' },
+  { name: 'Sabah Spor', url: 'https://www.sabah.com.tr/rss/spor.xml', category: 'spor' },
+  { name: 'Hürriyet Spor', url: 'https://www.hurriyet.com.tr/rss/spor', category: 'spor' },
+  { name: 'TRT Ekonomi', url: 'https://www.trthaber.com/ekonomi.rss', category: 'ekonomi' },
+  { name: 'Sabah Ekonomi', url: 'https://www.sabah.com.tr/rss/ekonomi.xml', category: 'ekonomi' },
+  { name: 'Hürriyet Ekonomi', url: 'https://www.hurriyet.com.tr/rss/ekonomi', category: 'ekonomi' },
+  { name: 'NTV Teknoloji', url: 'https://www.ntv.com.tr/teknoloji.rss', category: 'teknoloji' },
+  { name: 'TRT Teknoloji', url: 'https://www.trthaber.com/teknoloji.rss', category: 'teknoloji' },
+  { name: 'Karaman Gündem', url: 'https://www.karamangundem.com/rss', category: 'gündem' },
+  { name: 'Karaman Haber', url: 'https://www.karamanhaber.com/feed/', category: 'gündem' },
+  { name: 'Karamandan', url: 'https://www.karamandan.com/rss', category: 'gündem' }
 ];
 
 const STOP_WORDS = new Set([
@@ -102,21 +119,50 @@ async function handleNewsEndpoint(url, res) {
   try {
     const query = (url.searchParams.get('q') || '').trim().toLowerCase();
     const sourceFilter = url.searchParams.get('source') || '';
+    const categoryFilter = url.searchParams.get('category') || '';
+    const sortBy = url.searchParams.get('sort') || 'newest'; // newest, oldest
+    const dateFilter = url.searchParams.get('date') || ''; // today, week, month
     const items = await getNewsItems();
 
-    const filtered = items.filter((item) => {
+    let filtered = items.filter((item) => {
       const matchesSource = sourceFilter ? item.source === sourceFilter : true;
+      const matchesCategory = categoryFilter ? item.category === categoryFilter : true;
+      
+      // Tarih filtresi
+      let matchesDate = true;
+      if (dateFilter) {
+        const itemDate = new Date(item.publishedAt);
+        const now = new Date();
+        const diffMs = now - itemDate;
+        const diffDays = diffMs / (1000 * 60 * 60 * 24);
+        
+        if (dateFilter === 'today' && diffDays > 1) matchesDate = false;
+        else if (dateFilter === 'week' && diffDays > 7) matchesDate = false;
+        else if (dateFilter === 'month' && diffDays > 30) matchesDate = false;
+      }
+      
       if (!query) {
-        return matchesSource;
+        return matchesSource && matchesCategory && matchesDate;
       }
       const haystack = `${item.title} ${item.summary} ${item.description}`.toLowerCase();
-      return matchesSource && haystack.includes(query);
+      return matchesSource && matchesCategory && matchesDate && haystack.includes(query);
     });
+
+    // Sıralama
+    if (sortBy === 'oldest') {
+      filtered.sort((a, b) => new Date(a.publishedAt) - new Date(b.publishedAt));
+    } else {
+      filtered.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+    }
+
+    // Kategorileri topla
+    const categories = [...new Set(items.map(item => item.category).filter(Boolean))].sort();
 
     const payload = {
       updatedAt: new Date(cache.timestamp).toISOString(),
       total: filtered.length,
       sources: RSS_SOURCES.map((s) => s.name),
+      categories,
       items: filtered.slice(0, MAX_RESULTS)
     };
 
@@ -202,7 +248,8 @@ async function fetchSource(source) {
   const xml = await response.text();
   const parsed = parseRss(xml).map((item) => ({
     ...item,
-    source: source.name
+    source: source.name,
+    category: detectCategory(item, source.category)
   }));
 
   return parsed;
@@ -223,6 +270,12 @@ function parseRss(xml) {
     const description = stripHtml(rawDescription);
     const summary = summarize(description || title);
     const preview = createPreview(summary || description || title);
+    
+    // Görsel çekme
+    const image = extractImage(itemBlock, rawDescription);
+    
+    // Okuma süresi hesaplama
+    const readingTime = calculateReadingTime(description || title);
 
     items.push({
       id: link || `${title}-${pubDate}`,
@@ -231,11 +284,76 @@ function parseRss(xml) {
       publishedAt: pubDate,
       description,
       summary,
-      preview
+      preview,
+      image,
+      readingTime
     });
   }
 
   return items;
+}
+
+function extractImage(itemBlock, description) {
+  // Önce media:content veya enclosure'dan dene
+  const mediaContent = getTagValue(itemBlock, 'media:content') || getTagValue(itemBlock, 'enclosure');
+  if (mediaContent) {
+    const urlMatch = mediaContent.match(/url=["']([^"']+)["']/i);
+    if (urlMatch && /\.(jpg|jpeg|png|gif|webp)/i.test(urlMatch[1])) {
+      return urlMatch[1];
+    }
+  }
+  
+  // Sonra description'dan img tag'i ara
+  const imgMatch = description.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (imgMatch && /\.(jpg|jpeg|png|gif|webp)/i.test(imgMatch[1])) {
+    return imgMatch[1];
+  }
+  
+  // content:encoded içinde ara
+  const contentEncoded = getTagValue(itemBlock, 'content:encoded');
+  if (contentEncoded) {
+    const imgMatch2 = contentEncoded.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (imgMatch2 && /\.(jpg|jpeg|png|gif|webp)/i.test(imgMatch2[1])) {
+      return imgMatch2[1];
+    }
+  }
+  
+  return null;
+}
+
+function calculateReadingTime(text) {
+  if (!text) return 1;
+  const words = text.split(/\s+/).length;
+  const minutes = Math.ceil(words / 200); // Ortalama 200 kelime/dakika
+  return Math.max(1, minutes);
+}
+
+function detectCategory(item, sourceCategory) {
+  // Kaynak kategorisini kullan
+  if (sourceCategory && sourceCategory !== 'gündem') {
+    return sourceCategory;
+  }
+  
+  // Başlık ve içerikten kategori tespiti
+  const text = `${item.title} ${item.description || ''}`.toLowerCase();
+  
+  const categoryKeywords = {
+    spor: ['spor', 'futbol', 'basketbol', 'tenis', 'voleybol', 'atletizm', 'takım', 'lig', 'maç', 'gol', 'şampiyon'],
+    ekonomi: ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'şirket', 'yatırım', 'kredi'],
+    teknoloji: ['teknoloji', 'yapay zeka', 'ai', 'yazılım', 'donanım', 'telefon', 'bilgisayar', 'internet', 'dijital', 'uygulama'],
+    sağlık: ['sağlık', 'hastane', 'doktor', 'tedavi', 'ilaç', 'virüs', 'hastalık', 'aşı', 'sağlık bakanlığı'],
+    siyaset: ['siyaset', 'parti', 'seçim', 'meclis', 'bakan', 'cumhurbaşkanı', 'başbakan', 'milletvekili', 'oy'],
+    kültür: ['kültür', 'sanat', 'sinema', 'müzik', 'kitap', 'tiyatro', 'sergi', 'konser', 'film'],
+    dünya: ['dünya', 'uluslararası', 'abd', 'avrupa', 'rusya', 'çin', 'nato', 'bm', 'birleşmiş milletler']
+  };
+  
+  for (const [category, keywords] of Object.entries(categoryKeywords)) {
+    if (keywords.some(keyword => text.includes(keyword))) {
+      return category;
+    }
+  }
+  
+  return sourceCategory || 'gündem';
 }
 
 function getTagValue(block, tag) {
