@@ -1,2 +1,5 @@
 .env
 .DS_Store
+._*
+lib/._*
+public/._*
