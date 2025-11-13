@@ -19,26 +19,22 @@ const RSS_SOURCES = [
   { name: 'Hürriyet', url: 'https://www.hurriyet.com.tr/rss/gundem', category: 'gündem' },
   { name: 'Milliyet', url: 'https://www.milliyet.com.tr/rss/rssNew/gundemRSS.xml', category: 'gündem' },
   { name: 'Cumhuriyet', url: 'https://www.cumhuriyet.com.tr/rss/son_dakika.xml', category: 'gündem' },
-  Updated upstream
   { name: 'Yeni Şafak', url: 'https://www.yenisafak.com/rss/gundem', category: 'gündem' },
   { name: 'Takvim', url: 'https://www.takvim.com.tr/rss/guncel.xml', category: 'gündem' },
   { name: 'Star', url: 'https://www.star.com.tr/rss/gundem', category: 'gündem' },
   { name: 'Yeni Şafak', url: 'https://www.yenisafak.com/rss/gundem.xml', category: 'gündem' },
   { name: 'Takvim', url: 'https://www.takvim.com.tr/rss/guncel.xml', category: 'gündem' },
   { name: 'Star', url: 'https://www.star.com.tr/rss/gundem.xml', category: 'gündem' },
-  Stashed changes
   { name: 'Mynet Haber', url: 'https://www.mynet.com/haber/rss/kategori/gundem', category: 'gündem' },
   { name: 'SonDakika.com', url: 'https://www.sondakika.com/rss/', category: 'gündem' },
   { name: 'En Son Haber', url: 'https://www.ensonhaber.com/rss/ensonhaber.xml', category: 'gündem' },
   { name: 'CNN Türk', url: 'https://www.cnnturk.com/feed/rss/turkiye/news', category: 'gündem' },
-  Updated upstream
   { name: 'TRT Spor', url: 'https://www.trtspor.com.tr/rss/spor.xml', category: 'spor' },
   { name: 'Fanatik', url: 'https://www.fanatik.com.tr/rss/spor.xml', category: 'spor' },
   { name: 'NTV Spor', url: 'https://www.ntvspor.net/rss/spor.xml', category: 'spor' },
   { name: 'TRT Spor', url: 'https://www.trthaber.com/spor.rss', category: 'spor' },
   { name: 'Fanatik', url: 'https://www.fanatik.com.tr/rss/spor.xml', category: 'spor' },
   { name: 'NTV Spor', url: 'https://www.ntv.com.tr/spor.rss', category: 'spor' },
- Stashed changes
   { name: 'Sabah Spor', url: 'https://www.sabah.com.tr/rss/spor.xml', category: 'spor' },
   { name: 'Hürriyet Spor', url: 'https://www.hurriyet.com.tr/rss/spor', category: 'spor' },
   { name: 'TRT Ekonomi', url: 'https://www.trthaber.com/ekonomi.rss', category: 'ekonomi' },
@@ -493,4 +489,5 @@ async function attachGeminiSummaries(items) {
     }
   }
 }
+
 
