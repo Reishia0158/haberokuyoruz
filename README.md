@@ -4,11 +4,15 @@ Basit Node.js tabanlı bir RSS toplayıcı. TRT Haber, Habertürk, Sözcü ve NT
 
 ## Özellikler
 
-- Çoklu haber kaynağından (RSS) verileri çekip tek listede birleştirir.
-- 5 dakikalık bellek içi önbellek ile aynı isteklerde hız kazanır.
-- Kısa özetleri TF-IDF benzeri kelime skoru ile otomatik çıkarır.
-- Arama kutusu ve kaynak filtresi ile hızlı süzme.
-- Basit, mobil uyumlu arayüz.
+- ✨ **13+ haber kaynağı** - TRT, Habertürk, Sözcü, NTV ve daha fazlasından RSS çekme
+- 🤖 **AI destekli özetler** - Google Gemini API ile otomatik haber özetleri
+- 🔍 **Gelişmiş arama** - Kelime arama ve kaynak filtreleme
+- 📄 **Sayfalama** - 12 haber/sayfa ile kolay gezinme
+- ⭐ **Favoriler** - İstediğiniz haberleri kaydedin
+- 🌙 **Karanlık tema** - Göz dostu karanlık/aydınlık tema seçeneği
+- 📱 **PWA desteği** - Mobil cihazlara yüklenebilir, offline çalışabilir
+- ⚡ **Hızlı yükleme** - Loading skeleton ekranları ile daha iyi UX
+- 💾 **5 dakikalık cache** - Aynı isteklerde hız kazanır
 
 ## Kurulum
 
@@ -58,3 +62,20 @@ Google Gemini API'si için ücretsiz kotanı kullanarak haber başına 1-2 cüml
 ## Dağıtım
 
 Godaddy üzerinde aldığın domain için herhangi bir VPS/PaaS servisine Node.js uygulaması olarak dağıtabilir ya da Vercel/Render gibi servislerde kolayca yayınlayabilirsin. Uygulama sadece Node çekirdeğine ihtiyaç duyar.
+
+### Render Uyku Modu Çözümü
+
+Render'ın ücretsiz planında uygulamalar 15 dakika hareketsizlikten sonra uyku moduna geçer. Bu sorunu çözmek için:
+
+1. `/api/ping` endpoint'i eklendi
+2. [UptimeRobot](https://uptimerobot.com) veya [cron-job.org](https://cron-job.org) gibi bir servis kullanarak bu endpoint'i her 5-10 dakikada bir çağırın
+3. Detaylı talimatlar için `RENDER_UYKU_MODU.md` dosyasına bakın
+
+## Yeni Özellikler (v0.2.0)
+
+- ✅ Sayfalama sistemi (12 haber/sayfa)
+- ✅ Loading skeleton ekranları
+- ✅ Karanlık/aydınlık tema seçeneği (localStorage ile kaydedilir)
+- ✅ Favorilere ekleme özelliği
+- ✅ PWA desteği (manifest.json + service worker)
+- ✅ Render uyku modu önleme endpoint'i

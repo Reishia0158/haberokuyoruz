@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Haber Okuyoruz</title>
+    <meta name="description" content="Türkiye gündemini tek ekranda oku. TRT, Habertürk, Sözcü, NTV ve daha fazlasından anlık başlıklar." />
+    <meta name="theme-color" content="#e63946" />
+    <link rel="manifest" href="/manifest.json" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -27,6 +30,12 @@
             </select>
           </label>
           <button id="refreshBtn" class="primary">Yenile</button>
+          <button id="showFavoritesBtn" class="primary secondary">⭐ Favoriler</button>
+        </div>
+        <div class="theme-toggle">
+          <button id="themeToggle" class="theme-toggle__btn" aria-label="Tema değiştir">
+            <span class="theme-toggle__icon">🌙</span>
+          </button>
         </div>
         <p class="meta" id="statusText">Son veriler yükleniyor...</p>
       </div>
@@ -34,6 +43,34 @@
 
     <main>
       <section id="newsList" class="news-grid"></section>
+      <div id="loadingSkeleton" class="news-grid" hidden>
+        <article class="news-card skeleton">
+          <div class="skeleton__chip"></div>
+          <div class="skeleton__title"></div>
+          <div class="skeleton__line"></div>
+          <div class="skeleton__line"></div>
+          <div class="skeleton__line short"></div>
+        </article>
+        <article class="news-card skeleton">
+          <div class="skeleton__chip"></div>
+          <div class="skeleton__title"></div>
+          <div class="skeleton__line"></div>
+          <div class="skeleton__line"></div>
+          <div class="skeleton__line short"></div>
+        </article>
+        <article class="news-card skeleton">
+          <div class="skeleton__chip"></div>
+          <div class="skeleton__title"></div>
+          <div class="skeleton__line"></div>
+          <div class="skeleton__line"></div>
+          <div class="skeleton__line short"></div>
+        </article>
+      </div>
+      <div class="pagination" id="pagination" hidden>
+        <button id="prevBtn" class="pagination__btn" disabled>← Önceki</button>
+        <span class="pagination__info" id="pageInfo"></span>
+        <button id="nextBtn" class="pagination__btn">Sonraki →</button>
+      </div>
       <div class="empty-state" id="emptyState" hidden>
         <p>Aradığınız kriterlere uygun haber bulunamadı.</p>
       </div>
@@ -41,9 +78,14 @@
 
     <template id="newsCardTemplate">
       <article class="news-card">
-        <div class="news-card__chip">
-          <span class="source"></span>
-          <span class="time"></span>
+        <div class="news-card__header">
+          <div class="news-card__chip">
+            <span class="source"></span>
+            <span class="time"></span>
+          </div>
+          <button class="favorite-btn" aria-label="Favorilere ekle">
+            <span class="favorite-icon">♡</span>
+          </button>
         </div>
         <h2 class="title"></h2>
         <div class="ai-summary" hidden>

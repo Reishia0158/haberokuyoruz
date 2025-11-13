@@ -80,6 +80,17 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Render uyku modu önleme endpoint'i
+  if (url.pathname === '/api/ping' || url.pathname === '/ping') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      message: 'Sunucu aktif'
+    }));
+    return;
+  }
+
   await serveStaticFile(url.pathname, res);
 });
 
