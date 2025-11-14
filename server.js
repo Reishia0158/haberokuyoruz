@@ -294,16 +294,56 @@ function detectCategory(item, sourceCategory) {
     return 'karaman';
   }
   
-  // Kaynak kategorisini kullan (ama ekonomi için daha sıkı kontrol)
+  const text = `${item.title} ${item.description || ''}`.toLowerCase();
+  
+  // ÖNCE: Ekonomi OLMAYAN kelimeleri kontrol et (öncelikli)
+  const ekonomiOlmayanKelime = [
+    'şehit', 'asker', 'askeri', 'kaza', 'uçak', 'düşen', 'düştü', 'kaza', 'ölü', 'yaralı',
+    'milli savunma', 'msb', 'tsk', 'silahlı kuvvetler', 'hava kuvvetleri', 'kara kuvvetleri',
+    'cenaze', 'naaş', 'kahraman', 'vatan', 'bayrak', 'tören', 'anma', 'uğurlama',
+    'gürcistan', 'kafkasya', 'kara kutu', 'herkül', 'c-130', 'c130',
+    'deprem', 'sel', 'yangın', 'afet', 'doğal afet',
+    'suç', 'cinayet', 'tutuklama', 'mahkeme', 'dava', 'polis', 'jandarma'
+  ];
+  
+  const ekonomiOlmayanSkor = ekonomiOlmayanKelime.filter(kw => text.includes(kw)).length;
+  
+  // Eğer ekonomi olmayan kelimeler varsa, kesinlikle ekonomi değil
+  if (ekonomiOlmayanSkor > 0 && sourceCategory === 'ekonomi') {
+    // Gündem kategorisine ait kelimeleri kontrol et
+    const gundemKelime = ['gündem', 'haber', 'son dakika', 'güncel', 'olay', 'gelişme'];
+    if (gundemKelime.some(kw => text.includes(kw))) {
+      return 'gündem';
+    }
+    // Diğer kategorilere bak
+    const categoryKeywords = {
+      spor: ['spor', 'futbol', 'basketbol', 'tenis', 'voleybol', 'atletizm', 'takım', 'lig', 'maç', 'gol', 'şampiyon', 'futbolcu', 'antrenör'],
+      teknoloji: ['teknoloji', 'yapay zeka', 'ai', 'yazılım', 'donanım', 'telefon', 'bilgisayar', 'internet', 'dijital', 'uygulama', 'app', 'siber'],
+      sağlık: ['sağlık', 'hastane', 'doktor', 'tedavi', 'ilaç', 'virüs', 'hastalık', 'aşı', 'sağlık bakanlığı', 'ameliyat'],
+      siyaset: ['siyaset', 'parti', 'seçim', 'meclis', 'bakan', 'cumhurbaşkanı', 'başbakan', 'milletvekili', 'oy', 'seçmen'],
+      kültür: ['kültür', 'sanat', 'sinema', 'müzik', 'kitap', 'tiyatro', 'sergi', 'konser', 'film', 'dizi'],
+      dünya: ['dünya', 'uluslararası', 'abd', 'avrupa', 'rusya', 'çin', 'nato', 'bm', 'birleşmiş milletler', 'avrupa birliği']
+    };
+    
+    for (const [category, keywords] of Object.entries(categoryKeywords)) {
+      if (keywords.some(keyword => text.includes(keyword))) {
+        return category;
+      }
+    }
+    
+    return 'gündem';
+  }
+  
+  // Kaynak kategorisini kullan (ama ekonomi için çok sıkı kontrol)
   if (sourceCategory && sourceCategory !== 'gündem') {
-    // Eğer kaynak ekonomi ise, içeriği de kontrol et
     if (sourceCategory === 'ekonomi') {
-      const text = `${item.title} ${item.description || ''}`.toLowerCase();
-      const ekonomiKeywords = ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'şirket', 'yatırım', 'kredi', 'bütçe', 'maliye', 'finans', 'bankacılık', 'hisse', 'senedi'];
+      const ekonomiKeywords = ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'şirket', 'yatırım', 'kredi', 'bütçe', 'maliye', 'finans', 'bankacılık', 'hisse', 'senedi', 'endeks', 'borsa', 'hisse senedi', 'döviz', 'altın', 'petrol', 'enerji', 'sanayi', 'üretim', 'ihracat', 'ithalat', 'gdp', 'gsyh'];
       const ekonomiKelimeSayisi = ekonomiKeywords.filter(kw => text.includes(kw)).length;
       
-      // Eğer ekonomi ile alakalı kelime yoksa veya çok azsa, gündem yap
-      if (ekonomiKelimeSayisi === 0) {
+      // En az 2 ekonomi kelimesi olmalı veya başlıkta ekonomi kelimesi olmalı
+      const baslikEkonomi = item.title.toLowerCase().includes('ekonomi') || item.title.toLowerCase().includes('borsa') || item.title.toLowerCase().includes('dolar');
+      
+      if (ekonomiKelimeSayisi < 2 && !baslikEkonomi) {
         return 'gündem';
       }
     }
@@ -311,11 +351,9 @@ function detectCategory(item, sourceCategory) {
   }
   
   // Başlık ve içerikten kategori tespiti
-  const text = `${item.title} ${item.description || ''}`.toLowerCase();
-  
   const categoryKeywords = {
     spor: ['spor', 'futbol', 'basketbol', 'tenis', 'voleybol', 'atletizm', 'takım', 'lig', 'maç', 'gol', 'şampiyon', 'futbolcu', 'antrenör'],
-    ekonomi: ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'şirket', 'yatırım', 'kredi', 'bütçe', 'maliye', 'finans', 'bankacılık', 'hisse', 'senedi', 'borsa', 'endeks'],
+    ekonomi: ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'şirket', 'yatırım', 'kredi', 'bütçe', 'maliye', 'finans', 'bankacılık', 'hisse', 'senedi', 'endeks', 'döviz', 'altın', 'petrol'],
     teknoloji: ['teknoloji', 'yapay zeka', 'ai', 'yazılım', 'donanım', 'telefon', 'bilgisayar', 'internet', 'dijital', 'uygulama', 'app', 'siber'],
     sağlık: ['sağlık', 'hastane', 'doktor', 'tedavi', 'ilaç', 'virüs', 'hastalık', 'aşı', 'sağlık bakanlığı', 'ameliyat', 'tedavi'],
     siyaset: ['siyaset', 'parti', 'seçim', 'meclis', 'bakan', 'cumhurbaşkanı', 'başbakan', 'milletvekili', 'oy', 'seçmen'],
