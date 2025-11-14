@@ -36,9 +36,11 @@ const RSS_SOURCES = [
   { name: 'Hürriyet Ekonomi', url: 'https://www.hurriyet.com.tr/rss/ekonomi', category: 'ekonomi' },
   { name: 'NTV Teknoloji', url: 'https://www.ntv.com.tr/teknoloji.rss', category: 'teknoloji' },
   { name: 'TRT Teknoloji', url: 'https://www.trthaber.com/teknoloji.rss', category: 'teknoloji' },
-  { name: 'Karaman Gündem', url: 'https://www.karamangundem.com/rss', category: 'gündem' },
-  { name: 'Karaman Haber', url: 'https://www.karamanhaber.com/feed/', category: 'gündem' },
-  { name: 'Karamandan', url: 'https://www.karamandan.com/rss', category: 'gündem' }
+  { name: 'Karaman Gündem', url: 'https://www.karamangundem.com/rss', category: 'karaman' },
+  { name: 'Karaman Haber', url: 'https://www.karamanhaber.com/feed/', category: 'karaman' },
+  { name: 'Karamandan', url: 'https://www.karamandan.com/rss', category: 'karaman' },
+  { name: 'Karaman Postası', url: 'https://www.karamanpostasi.com/rss', category: 'karaman' },
+  { name: 'Karaman Manşet', url: 'https://www.karamanmanset.com/rss', category: 'karaman' }
 ];
 
 const STOP_WORDS = new Set([
@@ -287,8 +289,24 @@ function parseRss(xml) {
 
 
 function detectCategory(item, sourceCategory) {
-  // Kaynak kategorisini kullan
+  // Özel kategorileri koru (karaman gibi)
+  if (sourceCategory === 'karaman') {
+    return 'karaman';
+  }
+  
+  // Kaynak kategorisini kullan (ama ekonomi için daha sıkı kontrol)
   if (sourceCategory && sourceCategory !== 'gündem') {
+    // Eğer kaynak ekonomi ise, içeriği de kontrol et
+    if (sourceCategory === 'ekonomi') {
+      const text = `${item.title} ${item.description || ''}`.toLowerCase();
+      const ekonomiKeywords = ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'şirket', 'yatırım', 'kredi', 'bütçe', 'maliye', 'finans', 'bankacılık', 'hisse', 'senedi'];
+      const ekonomiKelimeSayisi = ekonomiKeywords.filter(kw => text.includes(kw)).length;
+      
+      // Eğer ekonomi ile alakalı kelime yoksa veya çok azsa, gündem yap
+      if (ekonomiKelimeSayisi === 0) {
+        return 'gündem';
+      }
+    }
     return sourceCategory;
   }
   
@@ -296,19 +314,28 @@ function detectCategory(item, sourceCategory) {
   const text = `${item.title} ${item.description || ''}`.toLowerCase();
   
   const categoryKeywords = {
-    spor: ['spor', 'futbol', 'basketbol', 'tenis', 'voleybol', 'atletizm', 'takım', 'lig', 'maç', 'gol', 'şampiyon'],
-    ekonomi: ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'şirket', 'yatırım', 'kredi'],
-    teknoloji: ['teknoloji', 'yapay zeka', 'ai', 'yazılım', 'donanım', 'telefon', 'bilgisayar', 'internet', 'dijital', 'uygulama'],
-    sağlık: ['sağlık', 'hastane', 'doktor', 'tedavi', 'ilaç', 'virüs', 'hastalık', 'aşı', 'sağlık bakanlığı'],
-    siyaset: ['siyaset', 'parti', 'seçim', 'meclis', 'bakan', 'cumhurbaşkanı', 'başbakan', 'milletvekili', 'oy'],
-    kültür: ['kültür', 'sanat', 'sinema', 'müzik', 'kitap', 'tiyatro', 'sergi', 'konser', 'film'],
-    dünya: ['dünya', 'uluslararası', 'abd', 'avrupa', 'rusya', 'çin', 'nato', 'bm', 'birleşmiş milletler']
+    spor: ['spor', 'futbol', 'basketbol', 'tenis', 'voleybol', 'atletizm', 'takım', 'lig', 'maç', 'gol', 'şampiyon', 'futbolcu', 'antrenör'],
+    ekonomi: ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'şirket', 'yatırım', 'kredi', 'bütçe', 'maliye', 'finans', 'bankacılık', 'hisse', 'senedi', 'borsa', 'endeks'],
+    teknoloji: ['teknoloji', 'yapay zeka', 'ai', 'yazılım', 'donanım', 'telefon', 'bilgisayar', 'internet', 'dijital', 'uygulama', 'app', 'siber'],
+    sağlık: ['sağlık', 'hastane', 'doktor', 'tedavi', 'ilaç', 'virüs', 'hastalık', 'aşı', 'sağlık bakanlığı', 'ameliyat', 'tedavi'],
+    siyaset: ['siyaset', 'parti', 'seçim', 'meclis', 'bakan', 'cumhurbaşkanı', 'başbakan', 'milletvekili', 'oy', 'seçmen'],
+    kültür: ['kültür', 'sanat', 'sinema', 'müzik', 'kitap', 'tiyatro', 'sergi', 'konser', 'film', 'dizi'],
+    dünya: ['dünya', 'uluslararası', 'abd', 'avrupa', 'rusya', 'çin', 'nato', 'bm', 'birleşmiş milletler', 'avrupa birliği']
   };
   
+  // Her kategori için skor hesapla
+  const categoryScores = {};
   for (const [category, keywords] of Object.entries(categoryKeywords)) {
-    if (keywords.some(keyword => text.includes(keyword))) {
-      return category;
+    const score = keywords.filter(keyword => text.includes(keyword)).length;
+    if (score > 0) {
+      categoryScores[category] = score;
     }
+  }
+  
+  // En yüksek skora sahip kategoriyi döndür
+  if (Object.keys(categoryScores).length > 0) {
+    const bestCategory = Object.entries(categoryScores).sort((a, b) => b[1] - a[1])[0][0];
+    return bestCategory;
   }
   
   return sourceCategory || 'gündem';

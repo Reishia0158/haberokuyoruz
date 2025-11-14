@@ -13,6 +13,7 @@ const nextBtn = document.getElementById('nextBtn');
 const pageInfo = document.getElementById('pageInfo');
 const themeToggle = document.getElementById('themeToggle');
 const showFavoritesBtn = document.getElementById('showFavoritesBtn');
+const karamanBtn = document.getElementById('karamanBtn');
 
 let debounceTimer;
 let currentPage = 1;
@@ -187,7 +188,8 @@ function renderNews(items) {
     'sağlık': '#e76f51',
     'siyaset': '#7209b7',
     'kültür': '#9b59b6',
-    'dünya': '#06a77d'
+    'dünya': '#06a77d',
+    'karaman': '#8b4513'
   };
 
   items.forEach((item) => {
@@ -276,7 +278,7 @@ function showFavorites() {
 
 function showAllNews() {
   showingFavorites = false;
-  showFavoritesBtn.textContent = 'Favoriler';
+  showFavoritesBtn.textContent = '⭐ Favoriler';
   fetchNews();
 }
 
@@ -331,17 +333,19 @@ searchInput.addEventListener('input', () => {
 
 categorySelect.addEventListener('change', () => {
   showingFavorites = false;
-  showFavoritesBtn.textContent = 'Favoriler';
+  showingKaraman = categorySelect.value === 'karaman';
+  showFavoritesBtn.textContent = '⭐ Favoriler';
+  karamanBtn.textContent = showingKaraman ? '← Tüm Haberler' : '🏛️ Karaman Haber';
   fetchNews();
 });
 sourceSelect.addEventListener('change', () => {
   showingFavorites = false;
-  showFavoritesBtn.textContent = 'Favoriler';
+  showFavoritesBtn.textContent = '⭐ Favoriler';
   fetchNews();
 });
 refreshBtn.addEventListener('click', () => {
   showingFavorites = false;
-  showFavoritesBtn.textContent = 'Favoriler';
+  showFavoritesBtn.textContent = '⭐ Favoriler';
   fetchNews();
 });
 showFavoritesBtn.addEventListener('click', () => {
@@ -349,6 +353,23 @@ showFavoritesBtn.addEventListener('click', () => {
     showAllNews();
   } else {
     showFavorites();
+  }
+});
+
+let showingKaraman = false;
+karamanBtn.addEventListener('click', () => {
+  if (showingKaraman) {
+    showingKaraman = false;
+    karamanBtn.textContent = '🏛️ Karaman Haber';
+    categorySelect.value = '';
+    fetchNews();
+  } else {
+    showingKaraman = true;
+    karamanBtn.textContent = '← Tüm Haberler';
+    categorySelect.value = 'karaman';
+    showingFavorites = false;
+    showFavoritesBtn.textContent = '⭐ Favoriler';
+    fetchNews();
   }
 });
 
