@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 services:
   - type: web
     name: haberokuyoruz
@@ -11,3 +12,18 @@ services:
       # - key: GEMINI_API_KEY
       #   value: YOUR_GEMINI_API_KEY_HERE
 
+=======
+services:
+  - type: web
+    name: haberokuyoruz
+    env: node
+    buildCommand: ""
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 10000
+      # Gemini API kullanıyorsanız aşağıdaki satırın yorumunu kaldırın:
+      # - key: GEMINI_API_KEY
+      #   value: YOUR_GEMINI_API_KEY_HERE
+
+>>>>>>> Stashed changes

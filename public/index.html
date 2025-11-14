@@ -12,85 +12,31 @@
   <body>
     <header class="hero">
       <div class="hero__content">
-        <p class="hero__eyebrow">haberokuyoruz.com</p>
-        <h1>Türkiye gündemini tek ekranda oku</h1>
-        <p class="hero__lead">
-          TRT, Habertürk, Sözcü, NTV ve daha fazlasından anlık başlıklar; basit yapay zeka destekli özetler ile
-          kalabalık haber sitelerini gezmeden gündemi takip et.
-        </p>
+        <div class="hero__header">
+          <h1>Haber Okuyoruz</h1>
+          <button id="themeToggle" class="btn-icon" aria-label="Tema">☀</button>
+        </div>
         <div class="controls">
-          <label class="field">
-            <span>Kelime ara</span>
-            <input type="search" id="searchInput" placeholder="ör. deprem, seçim, ekonomi" />
-          </label>
-          <label class="field">
-            <span>Kategori</span>
-            <select id="categorySelect">
-              <option value="">Tümü</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>Kaynak</span>
-            <select id="sourceSelect">
-              <option value="">Tümü</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>Tarih</span>
-            <select id="dateSelect">
-              <option value="">Tümü</option>
-              <option value="today">Bugün</option>
-              <option value="week">Bu Hafta</option>
-              <option value="month">Bu Ay</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>Sırala</span>
-            <select id="sortSelect">
-              <option value="newest">Yeniden Eskiye</option>
-              <option value="oldest">Eskiden Yeniye</option>
-            </select>
-          </label>
-          <button id="refreshBtn" class="primary">Yenile</button>
-          <button id="showFavoritesBtn" class="primary secondary">⭐ Favoriler</button>
+          <input type="search" id="searchInput" class="search-input" placeholder="Ara..." />
+          <select id="categorySelect" class="filter-select">
+            <option value="">Tüm Kategoriler</option>
+          </select>
+          <select id="sourceSelect" class="filter-select">
+            <option value="">Tüm Kaynaklar</option>
+          </select>
+          <button id="refreshBtn" class="btn-primary">Yenile</button>
+          <button id="showFavoritesBtn" class="btn-secondary">Favoriler</button>
         </div>
-        <div class="trending-topics" id="trendingTopics" hidden>
-          <span class="trending-label">🔥 Trend Konular:</span>
-          <div class="trending-tags" id="trendingTags"></div>
-        </div>
-        <div class="theme-toggle">
-          <button id="themeToggle" class="theme-toggle__btn" aria-label="Tema değiştir">
-            <span class="theme-toggle__icon">🌙</span>
-          </button>
-        </div>
-        <p class="meta" id="statusText">Son veriler yükleniyor...</p>
+        <p class="meta" id="statusText">Yükleniyor...</p>
       </div>
     </header>
 
     <main>
       <section id="newsList" class="news-grid"></section>
       <div id="loadingSkeleton" class="news-grid" hidden>
-        <article class="news-card skeleton">
-          <div class="skeleton__chip"></div>
-          <div class="skeleton__title"></div>
-          <div class="skeleton__line"></div>
-          <div class="skeleton__line"></div>
-          <div class="skeleton__line short"></div>
-        </article>
-        <article class="news-card skeleton">
-          <div class="skeleton__chip"></div>
-          <div class="skeleton__title"></div>
-          <div class="skeleton__line"></div>
-          <div class="skeleton__line"></div>
-          <div class="skeleton__line short"></div>
-        </article>
-        <article class="news-card skeleton">
-          <div class="skeleton__chip"></div>
-          <div class="skeleton__title"></div>
-          <div class="skeleton__line"></div>
-          <div class="skeleton__line"></div>
-          <div class="skeleton__line short"></div>
-        </article>
+        <article class="news-card skeleton"><div class="skeleton__line"></div><div class="skeleton__line"></div><div class="skeleton__line short"></div></article>
+        <article class="news-card skeleton"><div class="skeleton__line"></div><div class="skeleton__line"></div><div class="skeleton__line short"></div></article>
+        <article class="news-card skeleton"><div class="skeleton__line"></div><div class="skeleton__line"></div><div class="skeleton__line short"></div></article>
       </div>
       <div class="pagination" id="pagination" hidden>
         <button id="prevBtn" class="pagination__btn" disabled>← Önceki</button>
@@ -104,48 +50,21 @@
 
     <template id="newsCardTemplate">
       <article class="news-card">
-        <div class="news-card__image-container" hidden>
-          <img class="news-card__image" src="" alt="" loading="lazy" />
-        </div>
         <div class="news-card__header">
-          <div class="news-card__chip">
-            <span class="category-badge"></span>
-            <span class="source"></span>
-            <span class="time"></span>
-            <span class="reading-time"></span>
-          </div>
-          <button class="favorite-btn" aria-label="Favorilere ekle">
-            <span class="favorite-icon">♡</span>
-          </button>
+          <span class="category-badge"></span>
+          <span class="source"></span>
+          <span class="time"></span>
+          <button class="favorite-btn" aria-label="Favori">♡</button>
         </div>
         <h2 class="title"></h2>
         <div class="ai-summary" hidden>
-          <span class="ai-summary__label">🤖 AI Özeti</span>
           <p class="ai-summary__text"></p>
         </div>
         <p class="summary"></p>
-        <details class="details">
-          <summary>Daha fazla oku</summary>
-          <p class="description"></p>
-        </details>
-        <div class="news-card__actions">
-          <a class="cta" target="_blank" rel="noopener noreferrer">Haberi kaynağında aç →</a>
-          <div class="share-buttons">
-            <button class="share-btn" data-platform="twitter" aria-label="Twitter'da paylaş">🐦</button>
-            <button class="share-btn" data-platform="facebook" aria-label="Facebook'ta paylaş">📘</button>
-            <button class="share-btn" data-platform="whatsapp" aria-label="WhatsApp'ta paylaş">💬</button>
-          </div>
-        </div>
+        <a class="cta" target="_blank" rel="noopener noreferrer">Devamı →</a>
       </article>
     </template>
 
-    <div id="newsModal" class="modal" hidden style="display: none !important; visibility: hidden !important;">
-      <div class="modal__overlay"></div>
-      <div class="modal__content">
-        <button class="modal__close" aria-label="Kapat">×</button>
-        <div id="modalContent"></div>
-      </div>
-    </div>
 
     <footer>
       <p>

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { summarizeWithGemini, isGeminiEnabled } from './lib/gemini.js';
 
 const PORT = process.env.PORT || 3000;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 3 * 60 * 1000; // 3 minutes (daha sık güncelleme)
 const MAX_RESULTS = 200;
 
 const RSS_SOURCES = [
@@ -19,9 +19,6 @@ const RSS_SOURCES = [
   { name: 'Hürriyet', url: 'https://www.hurriyet.com.tr/rss/gundem', category: 'gündem' },
   { name: 'Milliyet', url: 'https://www.milliyet.com.tr/rss/rssNew/gundemRSS.xml', category: 'gündem' },
   { name: 'Cumhuriyet', url: 'https://www.cumhuriyet.com.tr/rss/son_dakika.xml', category: 'gündem' },
-  { name: 'Yeni Şafak', url: 'https://www.yenisafak.com/rss/gundem', category: 'gündem' },
-  { name: 'Takvim', url: 'https://www.takvim.com.tr/rss/guncel.xml', category: 'gündem' },
-  { name: 'Star', url: 'https://www.star.com.tr/rss/gundem', category: 'gündem' },
   { name: 'Yeni Şafak', url: 'https://www.yenisafak.com/rss/gundem.xml', category: 'gündem' },
   { name: 'Takvim', url: 'https://www.takvim.com.tr/rss/guncel.xml', category: 'gündem' },
   { name: 'Star', url: 'https://www.star.com.tr/rss/gundem.xml', category: 'gündem' },
@@ -29,9 +26,6 @@ const RSS_SOURCES = [
   { name: 'SonDakika.com', url: 'https://www.sondakika.com/rss/', category: 'gündem' },
   { name: 'En Son Haber', url: 'https://www.ensonhaber.com/rss/ensonhaber.xml', category: 'gündem' },
   { name: 'CNN Türk', url: 'https://www.cnnturk.com/feed/rss/turkiye/news', category: 'gündem' },
-  { name: 'TRT Spor', url: 'https://www.trtspor.com.tr/rss/spor.xml', category: 'spor' },
-  { name: 'Fanatik', url: 'https://www.fanatik.com.tr/rss/spor.xml', category: 'spor' },
-  { name: 'NTV Spor', url: 'https://www.ntvspor.net/rss/spor.xml', category: 'spor' },
   { name: 'TRT Spor', url: 'https://www.trthaber.com/spor.rss', category: 'spor' },
   { name: 'Fanatik', url: 'https://www.fanatik.com.tr/rss/spor.xml', category: 'spor' },
   { name: 'NTV Spor', url: 'https://www.ntv.com.tr/spor.rss', category: 'spor' },
@@ -84,7 +78,7 @@ const STOP_WORDS = new Set([
   'ise'
 ]);
 
-const GEMINI_SUMMARY_MAX_ITEMS = Number(process.env.GEMINI_SUMMARY_MAX_ITEMS || 20);
+const GEMINI_SUMMARY_MAX_ITEMS = Number(process.env.GEMINI_SUMMARY_MAX_ITEMS || 10);
 
 const cache = {
   timestamp: 0,
@@ -276,12 +270,6 @@ function parseRss(xml) {
     const description = stripHtml(rawDescription);
     const summary = summarize(description || title);
     const preview = createPreview(summary || description || title);
-    
-    // Görsel çekme
-    const image = extractImage(itemBlock, rawDescription);
-    
-    // Okuma süresi hesaplama
-    const readingTime = calculateReadingTime(description || title);
 
     items.push({
       id: link || `${title}-${pubDate}`,
@@ -290,49 +278,13 @@ function parseRss(xml) {
       publishedAt: pubDate,
       description,
       summary,
-      preview,
-      image,
-      readingTime
+      preview
     });
   }
 
   return items;
 }
 
-function extractImage(itemBlock, description) {
-  // Önce media:content veya enclosure'dan dene
-  const mediaContent = getTagValue(itemBlock, 'media:content') || getTagValue(itemBlock, 'enclosure');
-  if (mediaContent) {
-    const urlMatch = mediaContent.match(/url=["']([^"']+)["']/i);
-    if (urlMatch && /\.(jpg|jpeg|png|gif|webp)/i.test(urlMatch[1])) {
-      return urlMatch[1];
-    }
-  }
-  
-  // Sonra description'dan img tag'i ara
-  const imgMatch = description.match(/<img[^>]+src=["']([^"']+)["']/i);
-  if (imgMatch && /\.(jpg|jpeg|png|gif|webp)/i.test(imgMatch[1])) {
-    return imgMatch[1];
-  }
-  
-  // content:encoded içinde ara
-  const contentEncoded = getTagValue(itemBlock, 'content:encoded');
-  if (contentEncoded) {
-    const imgMatch2 = contentEncoded.match(/<img[^>]+src=["']([^"']+)["']/i);
-    if (imgMatch2 && /\.(jpg|jpeg|png|gif|webp)/i.test(imgMatch2[1])) {
-      return imgMatch2[1];
-    }
-  }
-  
-  return null;
-}
-
-function calculateReadingTime(text) {
-  if (!text) return 1;
-  const words = text.split(/\s+/).length;
-  const minutes = Math.ceil(words / 200); // Ortalama 200 kelime/dakika
-  return Math.max(1, minutes);
-}
 
 function detectCategory(item, sourceCategory) {
   // Kaynak kategorisini kullan
@@ -476,18 +428,28 @@ function normalizeKey(item) {
 async function attachGeminiSummaries(items) {
   if (!isGeminiEnabled) return;
 
-  const limit = Math.min(GEMINI_SUMMARY_MAX_ITEMS, items.length);
+  // Sadece ilk 10 önemli haber için AI özeti (performans için)
+  const limit = Math.min(10, items.length);
+  const promises = [];
+  
   for (let index = 0; index < limit; index += 1) {
     const item = items[index];
-    if (!item || item.aiSummary || !item.description) {
+    if (!item || item.aiSummary || !item.description || item.description.length < 100) {
       continue;
     }
 
-    const summary = await summarizeWithGemini(item);
-    if (summary) {
-      item.aiSummary = summary;
-    }
+    // Paralel işlem için promise array'e ekle
+    promises.push(
+      summarizeWithGemini(item).then(summary => {
+        if (summary) {
+          item.aiSummary = summary;
+        }
+      }).catch(() => {
+        // Hata durumunda sessizce devam et
+      })
+    );
   }
+
+  // Tüm AI isteklerini paralel çalıştır
+  await Promise.allSettled(promises);
 }
-
-
