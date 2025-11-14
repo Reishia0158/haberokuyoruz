@@ -39,8 +39,8 @@ GEMINI_API_KEY="AI...senin_anahtarın..."
 # Analiz edilecek haber sayısı (varsayılan: 30)
 AI_ANALYSIS_LIMIT=30
 
-# Gemini model (varsayılan: gemini-1.5-flash)
-GEMINI_MODEL="gemini-1.5-flash"
+# Gemini model (varsayılan: gemini-1.5-flash-001)
+GEMINI_MODEL="gemini-1.5-flash-001"
 ```
 
 ## 📊 AI Analiz Sonuçları
