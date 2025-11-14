@@ -7,6 +7,9 @@ services:
     envVars:
       - key: PORT
         value: 10000
-      # Gemini API kullanıyorsanız aşağıdaki satırın yorumunu kaldırın:
+      # AI özellikleri için Gemini API anahtarı (Render Dashboard'dan ekleyin)
       # - key: GEMINI_API_KEY
       #   value: YOUR_GEMINI_API_KEY_HERE
+      # AI analiz limiti (opsiyonel, varsayılan: 30)
+      # - key: AI_ANALYSIS_LIMIT
+      #   value: 30

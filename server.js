@@ -4,6 +4,17 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { summarizeWithGemini, isGeminiEnabled } from './lib/gemini.js';
+import { 
+  saveNewsItems, 
+  getAllNewsFromDB, 
+  cleanOldNewsFromDB,
+  getTotalNewsCount 
+} from './lib/database.js';
+import { 
+  analyzeNewsBatch, 
+  sortByImportance, 
+  filterPublishable 
+} from './lib/ai-news-manager.js';
 
 const PORT = process.env.PORT || 3000;
 const CACHE_TTL = 3 * 60 * 1000; // 3 minutes (daha sık güncelleme)
@@ -218,10 +229,13 @@ function getContentType(ext) {
 async function getNewsItems() {
   try {
     const now = Date.now();
+    
+    // Cache kontrolü (hızlı yanıt için)
     if (cache.items.length && now - cache.timestamp < CACHE_TTL) {
       return cache.items;
     }
 
+    // RSS'den yeni haberleri çek
     const responses = await Promise.allSettled(RSS_SOURCES.map(fetchSource));
     const collected = [];
 
@@ -235,14 +249,110 @@ async function getNewsItems() {
 
     const deduped = dedupeItems(collected);
     deduped.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
-    await attachGeminiSummaries(deduped);
+    
+    // 🤖 AI ile haber analizi (önem, kategori, etiketler, yayınla mı)
+    console.log('🤖 AI haber analizi başlatılıyor...');
+    const AI_ANALYSIS_LIMIT = Number(process.env.AI_ANALYSIS_LIMIT || 30); // İlk 30 haberi analiz et
+    const analyzed = await analyzeNewsBatch(deduped, AI_ANALYSIS_LIMIT);
+    
+    // AI özetleri oluştur
+    await attachGeminiSummaries(analyzed);
+    
+    // Önem skoruna göre sırala (AI'nın önerdiği önemli haberler önce)
+    const sortedByImportance = sortByImportance(analyzed);
+    
+    // Yayınlanacak haberleri filtrele (AI spam/önemsiz haberleri filtreler)
+    const publishable = filterPublishable(sortedByImportance);
+    
+    console.log(`🤖 AI: ${analyzed.length} haber analiz edildi, ${publishable.length} haber yayınlanacak`);
 
-    cache.items = deduped;
+    // Veritabanına kaydet (otomatik)
+    if (publishable.length > 0) {
+      try {
+        const saved = await saveNewsItems(publishable);
+        console.log(`✅ ${saved} haber veritabanına kaydedildi`);
+      } catch (dbError) {
+        console.warn('Veritabanı kayıt hatası:', dbError.message);
+      }
+    }
+
+    // Veritabanından tüm haberleri al (RSS kesilse bile içerik var)
+    let dbNews = [];
+    try {
+      dbNews = await getAllNewsFromDB();
+      console.log(`📊 Veritabanında ${dbNews.length} haber var`);
+    } catch (dbError) {
+      console.warn('Veritabanı okuma hatası:', dbError.message);
+    }
+
+    // RSS'den gelen yeni haberler + veritabanındaki eski haberler
+    // Yeni haberler öncelikli, sonra veritabanından
+    const allNews = [...publishable];
+    const existingLinks = new Set(publishable.map(item => item.link));
+    
+    // Veritabanından sadece RSS'de olmayan haberleri ekle
+    for (const dbItem of dbNews) {
+      if (!existingLinks.has(dbItem.link)) {
+        allNews.push({
+          id: dbItem.id,
+          title: dbItem.title,
+          link: dbItem.link,
+          description: dbItem.description,
+          summary: dbItem.summary,
+          preview: dbItem.preview,
+          source: dbItem.source,
+          category: dbItem.category,
+          publishedAt: dbItem.publishedAt,
+          aiSummary: dbItem.aiSummary
+        });
+      }
+    }
+
+    // Tarihe göre sırala
+    allNews.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+
+    // Cache'i güncelle
+    cache.items = allNews;
     cache.timestamp = now;
-    return deduped;
+
+    // Eski haberleri temizle (30 günden eski, arka planda)
+    setImmediate(async () => {
+      try {
+        const deleted = await cleanOldNewsFromDB();
+        if (deleted.changes > 0) {
+          console.log(`🧹 ${deleted.changes} eski haber temizlendi`);
+        }
+      } catch (err) {
+        // Sessizce devam et
+      }
+    });
+
+    return allNews;
   } catch (error) {
     console.error('getNewsItems hatası:', error);
-    // Hata durumunda bile boş array döndür ki sayfa yüklensin
+    
+    // Hata durumunda veritabanından oku
+    try {
+      const dbNews = await getAllNewsFromDB();
+      if (dbNews.length > 0) {
+        console.log('⚠️ RSS hatası, veritabanından haberler gösteriliyor');
+        return dbNews.map(item => ({
+          id: item.id,
+          title: item.title,
+          link: item.link,
+          description: item.description,
+          summary: item.summary,
+          preview: item.preview,
+          source: item.source,
+          category: item.category,
+          publishedAt: item.publishedAt,
+          aiSummary: item.aiSummary
+        }));
+      }
+    } catch (dbError) {
+      console.warn('Veritabanı yedek okuma hatası:', dbError.message);
+    }
+    
     return cache.items.length > 0 ? cache.items : [];
   }
 }
