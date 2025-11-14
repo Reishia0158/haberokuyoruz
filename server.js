@@ -216,29 +216,35 @@ function getContentType(ext) {
 }
 
 async function getNewsItems() {
-  const now = Date.now();
-  if (cache.items.length && now - cache.timestamp < CACHE_TTL) {
-    return cache.items;
-  }
-
-  const responses = await Promise.allSettled(RSS_SOURCES.map(fetchSource));
-  const collected = [];
-
-  for (const result of responses) {
-    if (result.status === 'fulfilled') {
-      collected.push(...result.value);
-    } else {
-      console.warn('Kaynak alınamadı:', result.reason?.message || result.reason);
+  try {
+    const now = Date.now();
+    if (cache.items.length && now - cache.timestamp < CACHE_TTL) {
+      return cache.items;
     }
+
+    const responses = await Promise.allSettled(RSS_SOURCES.map(fetchSource));
+    const collected = [];
+
+    for (const result of responses) {
+      if (result.status === 'fulfilled') {
+        collected.push(...result.value);
+      } else {
+        console.warn('Kaynak alınamadı:', result.reason?.message || result.reason);
+      }
+    }
+
+    const deduped = dedupeItems(collected);
+    deduped.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+    await attachGeminiSummaries(deduped);
+
+    cache.items = deduped;
+    cache.timestamp = now;
+    return deduped;
+  } catch (error) {
+    console.error('getNewsItems hatası:', error);
+    // Hata durumunda bile boş array döndür ki sayfa yüklensin
+    return cache.items.length > 0 ? cache.items : [];
   }
-
-  const deduped = dedupeItems(collected);
-  deduped.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
-  await attachGeminiSummaries(deduped);
-
-  cache.items = deduped;
-  cache.timestamp = now;
-  return deduped;
 }
 
 async function fetchSource(source) {

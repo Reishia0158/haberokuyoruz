@@ -13,7 +13,7 @@ const nextBtn = document.getElementById('nextBtn');
 const pageInfo = document.getElementById('pageInfo');
 const themeToggle = document.getElementById('themeToggle');
 const showFavoritesBtn = document.getElementById('showFavoritesBtn');
-const karamanBtn = document.getElementById('karamanBtn');
+const karamanBtn = document.getElementById('karamanBtn'); // Opsiyonel - HTML'de yoksa null olabilir
 
 let debounceTimer;
 let currentPage = 1;
@@ -84,22 +84,38 @@ async function fetchNews({ silent = false } = {}) {
 
   try {
     const response = await fetch(`/api/news?${params.toString()}`);
-    if (!response.ok) throw new Error('Sunucu hatası');
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Sunucu hatası: ${response.status}`);
+    }
 
     const payload = await response.json();
-    allItems = payload.items;
+    
+    // API'den error dönerse
+    if (payload.error) {
+      throw new Error(payload.error);
+    }
+    
+    allItems = payload.items || [];
     currentPage = 1;
-    updateSources(payload.sources);
+    updateSources(payload.sources || []);
     updateCategories(payload.categories || []);
     renderPage();
 
-    const updated = new Date(payload.updatedAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-    statusText.textContent = `${payload.total} haber · ${updated}`;
+    if (payload.updatedAt) {
+      const updated = new Date(payload.updatedAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+      statusText.textContent = `${payload.total || 0} haber · ${updated}`;
+    } else {
+      statusText.textContent = `${payload.total || 0} haber`;
+    }
   } catch (error) {
-    statusText.textContent = 'Hata oluştu. Tekrar deneyin.';
+    console.error('Haber yükleme hatası:', error);
+    statusText.textContent = `Hata: ${error.message || 'Bağlantı hatası. Lütfen tekrar deneyin.'}`;
     hideLoading();
     newsList.innerHTML = '';
     emptyState.hidden = false;
+    emptyState.querySelector('p').textContent = error.message || 'Haberlere ulaşılamadı. Lütfen daha sonra tekrar deneyin.';
     pagination.hidden = true;
   }
 }
@@ -340,7 +356,9 @@ categorySelect.addEventListener('change', () => {
   showingFavorites = false;
   showingKaraman = categorySelect.value === 'karaman';
   showFavoritesBtn.textContent = '⭐ Favoriler';
-  karamanBtn.textContent = showingKaraman ? '← Tüm Haberler' : '🏛️ Karaman Haber';
+  if (karamanBtn) {
+    karamanBtn.textContent = showingKaraman ? '← Tüm Haberler' : '🏛️ Karaman Haber';
+  }
   fetchNews();
 });
 sourceSelect.addEventListener('change', () => {
@@ -362,20 +380,22 @@ showFavoritesBtn.addEventListener('click', () => {
 });
 
 let showingKaraman = false;
-karamanBtn.addEventListener('click', () => {
-  if (showingKaraman) {
-    showingKaraman = false;
-    karamanBtn.textContent = '🏛️ Karaman Haber';
-    categorySelect.value = '';
-    fetchNews();
-  } else {
-    showingKaraman = true;
-    karamanBtn.textContent = '← Tüm Haberler';
-    categorySelect.value = 'karaman';
-    showingFavorites = false;
-    showFavoritesBtn.textContent = '⭐ Favoriler';
-    fetchNews();
-  }
-});
+if (karamanBtn) {
+  karamanBtn.addEventListener('click', () => {
+    if (showingKaraman) {
+      showingKaraman = false;
+      karamanBtn.textContent = '🏛️ Karaman Haber';
+      categorySelect.value = '';
+      fetchNews();
+    } else {
+      showingKaraman = true;
+      karamanBtn.textContent = '← Tüm Haberler';
+      categorySelect.value = 'karaman';
+      showingFavorites = false;
+      showFavoritesBtn.textContent = '⭐ Favoriler';
+      fetchNews();
+    }
+  });
+}
 
 fetchNews();
