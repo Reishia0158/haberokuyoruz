@@ -298,52 +298,71 @@ function detectCategory(item, sourceCategory) {
   
   // ÖNCE: Ekonomi OLMAYAN kelimeleri kontrol et (öncelikli)
   const ekonomiOlmayanKelime = [
-    'şehit', 'asker', 'askeri', 'kaza', 'uçak', 'düşen', 'düştü', 'kaza', 'ölü', 'yaralı',
+    'şehit', 'şehid', 'asker', 'askeri', 'kaza', 'uçak', 'düşen', 'düştü', 'ölü', 'yaralı',
     'milli savunma', 'msb', 'tsk', 'silahlı kuvvetler', 'hava kuvvetleri', 'kara kuvvetleri',
-    'cenaze', 'naaş', 'kahraman', 'vatan', 'bayrak', 'tören', 'anma', 'uğurlama',
-    'gürcistan', 'kafkasya', 'kara kutu', 'herkül', 'c-130', 'c130',
+    'cenaze', 'naaş', 'kahraman', 'vatan', 'bayrak', 'tören', 'anma', 'uğurlama', 'uğurluyoruz',
+    'gürcistan', 'kafkasya', 'kara kutu', 'herkül', 'c-130', 'c130', 'c130 herkül',
     'deprem', 'sel', 'yangın', 'afet', 'doğal afet',
-    'suç', 'cinayet', 'tutuklama', 'mahkeme', 'dava', 'polis', 'jandarma'
+    'suç', 'cinayet', 'tutuklama', 'mahkeme', 'dava', 'polis', 'jandarma',
+    'sağlık', 'hastane', 'doktor', 'tedavi', 'zehir', 'zehirlenme', 'entübe',
+    'güzellik', 'botoks', 'dermatoloji', 'çocuk', 'çocuklar'
   ];
   
   const ekonomiOlmayanSkor = ekonomiOlmayanKelime.filter(kw => text.includes(kw)).length;
   
-  // Eğer ekonomi olmayan kelimeler varsa, kesinlikle ekonomi değil
-  if (ekonomiOlmayanSkor > 0 && sourceCategory === 'ekonomi') {
-    // Gündem kategorisine ait kelimeleri kontrol et
-    const gundemKelime = ['gündem', 'haber', 'son dakika', 'güncel', 'olay', 'gelişme'];
-    if (gundemKelime.some(kw => text.includes(kw))) {
+  // Eğer ekonomi olmayan kelimeler varsa, kesinlikle ekonomi değil (kaynak ne olursa olsun)
+  if (ekonomiOlmayanSkor > 0) {
+    // Eğer kaynak ekonomi ise ama içerik ekonomi değilse, gündem yap
+    if (sourceCategory === 'ekonomi') {
+      // Gündem kategorisine ait kelimeleri kontrol et
+      const gundemKelime = ['gündem', 'haber', 'son dakika', 'güncel', 'olay', 'gelişme'];
+      if (gundemKelime.some(kw => text.includes(kw))) {
+        return 'gündem';
+      }
+      // Diğer kategorilere bak
+      const categoryKeywords = {
+        spor: ['spor', 'futbol', 'basketbol', 'tenis', 'voleybol', 'atletizm', 'takım', 'lig', 'maç', 'gol', 'şampiyon', 'futbolcu', 'antrenör'],
+        teknoloji: ['teknoloji', 'yapay zeka', 'ai', 'yazılım', 'donanım', 'telefon', 'bilgisayar', 'internet', 'dijital', 'uygulama', 'app', 'siber'],
+        sağlık: ['sağlık', 'hastane', 'doktor', 'tedavi', 'ilaç', 'virüs', 'hastalık', 'aşı', 'sağlık bakanlığı', 'ameliyat', 'zehir', 'zehirlenme', 'entübe', 'güzellik', 'botoks', 'dermatoloji'],
+        siyaset: ['siyaset', 'parti', 'seçim', 'meclis', 'bakan', 'cumhurbaşkanı', 'başbakan', 'milletvekili', 'oy', 'seçmen'],
+        kültür: ['kültür', 'sanat', 'sinema', 'müzik', 'kitap', 'tiyatro', 'sergi', 'konser', 'film', 'dizi'],
+        dünya: ['dünya', 'uluslararası', 'abd', 'avrupa', 'rusya', 'çin', 'nato', 'bm', 'birleşmiş milletler', 'avrupa birliği']
+      };
+      
+      for (const [category, keywords] of Object.entries(categoryKeywords)) {
+        if (keywords.some(keyword => text.includes(keyword))) {
+          return category;
+        }
+      }
+      
       return 'gündem';
     }
-    // Diğer kategorilere bak
-    const categoryKeywords = {
-      spor: ['spor', 'futbol', 'basketbol', 'tenis', 'voleybol', 'atletizm', 'takım', 'lig', 'maç', 'gol', 'şampiyon', 'futbolcu', 'antrenör'],
-      teknoloji: ['teknoloji', 'yapay zeka', 'ai', 'yazılım', 'donanım', 'telefon', 'bilgisayar', 'internet', 'dijital', 'uygulama', 'app', 'siber'],
-      sağlık: ['sağlık', 'hastane', 'doktor', 'tedavi', 'ilaç', 'virüs', 'hastalık', 'aşı', 'sağlık bakanlığı', 'ameliyat'],
-      siyaset: ['siyaset', 'parti', 'seçim', 'meclis', 'bakan', 'cumhurbaşkanı', 'başbakan', 'milletvekili', 'oy', 'seçmen'],
-      kültür: ['kültür', 'sanat', 'sinema', 'müzik', 'kitap', 'tiyatro', 'sergi', 'konser', 'film', 'dizi'],
-      dünya: ['dünya', 'uluslararası', 'abd', 'avrupa', 'rusya', 'çin', 'nato', 'bm', 'birleşmiş milletler', 'avrupa birliği']
-    };
-    
-    for (const [category, keywords] of Object.entries(categoryKeywords)) {
-      if (keywords.some(keyword => text.includes(keyword))) {
-        return category;
-      }
-    }
-    
-    return 'gündem';
+    // Kaynak ekonomi değilse, normal kategori tespitine devam et
   }
   
   // Kaynak kategorisini kullan (ama ekonomi için çok sıkı kontrol)
   if (sourceCategory && sourceCategory !== 'gündem') {
     if (sourceCategory === 'ekonomi') {
-      const ekonomiKeywords = ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'şirket', 'yatırım', 'kredi', 'bütçe', 'maliye', 'finans', 'bankacılık', 'hisse', 'senedi', 'endeks', 'borsa', 'hisse senedi', 'döviz', 'altın', 'petrol', 'enerji', 'sanayi', 'üretim', 'ihracat', 'ithalat', 'gdp', 'gsyh'];
+      const ekonomiKeywords = ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'şirket', 'yatırım', 'kredi', 'bütçe', 'maliye', 'finans', 'bankacılık', 'hisse', 'senedi', 'endeks', 'hisse senedi', 'döviz', 'altın', 'petrol', 'enerji', 'sanayi', 'üretim', 'ihracat', 'ithalat', 'gdp', 'gsyh', 'kara para', 'aklama', 'coino', 'kripto', 'bitcoin', 'kripto para'];
       const ekonomiKelimeSayisi = ekonomiKeywords.filter(kw => text.includes(kw)).length;
       
-      // En az 2 ekonomi kelimesi olmalı veya başlıkta ekonomi kelimesi olmalı
-      const baslikEkonomi = item.title.toLowerCase().includes('ekonomi') || item.title.toLowerCase().includes('borsa') || item.title.toLowerCase().includes('dolar');
+      // Başlıkta ekonomi kelimesi kontrolü
+      const baslikEkonomi = item.title.toLowerCase().includes('ekonomi') || 
+                           item.title.toLowerCase().includes('borsa') || 
+                           item.title.toLowerCase().includes('dolar') ||
+                           item.title.toLowerCase().includes('enflasyon') ||
+                           item.title.toLowerCase().includes('faiz') ||
+                           item.title.toLowerCase().includes('kara para') ||
+                           item.title.toLowerCase().includes('aklama');
       
+      // En az 2 ekonomi kelimesi olmalı VEYA başlıkta ekonomi kelimesi olmalı
+      // Ayrıca ekonomi olmayan kelimeler olmamalı (yukarıda kontrol edildi)
       if (ekonomiKelimeSayisi < 2 && !baslikEkonomi) {
+        return 'gündem';
+      }
+      
+      // Eğer ekonomi kelimeleri varsa ama ekonomi olmayan kelimeler de varsa, gündem yap
+      if (ekonomiOlmayanSkor > 0 && ekonomiKelimeSayisi < 3) {
         return 'gündem';
       }
     }

@@ -257,7 +257,8 @@ function showFavorites() {
     renderPage();
     statusText.textContent = 'Favori haber yok';
     showingFavorites = true;
-    showFavoritesBtn.textContent = 'Tüm Haberler';
+    showFavoritesBtn.textContent = '← Tüm Haberler';
+    showFavoritesBtn.innerHTML = '← Tüm Haberler';
     return;
   }
 
@@ -272,13 +273,15 @@ function showFavorites() {
     renderPage();
     statusText.textContent = `${favoriteItems.length} favori`;
     showingFavorites = true;
-    showFavoritesBtn.textContent = 'Tüm Haberler';
+    showFavoritesBtn.textContent = '← Tüm Haberler';
+    showFavoritesBtn.innerHTML = '← Tüm Haberler';
   });
 }
 
 function showAllNews() {
   showingFavorites = false;
   showFavoritesBtn.textContent = '⭐ Favoriler';
+  showFavoritesBtn.innerHTML = '⭐ Favoriler';
   fetchNews();
 }
 
