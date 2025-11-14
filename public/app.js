@@ -198,7 +198,9 @@ function renderNews(items) {
     // Kategori badge
     const categoryBadge = node.querySelector('.category-badge');
     if (item.category) {
-      categoryBadge.textContent = item.category.charAt(0).toUpperCase() + item.category.slice(1);
+      // Türkçe karakterleri düzgün işlemek için toLocaleUpperCase kullan
+      const categoryText = item.category.charAt(0).toLocaleUpperCase('tr-TR') + item.category.slice(1);
+      categoryBadge.textContent = categoryText;
       categoryBadge.style.backgroundColor = categoryColors[item.category] || categoryColors['gündem'];
     } else {
       categoryBadge.style.display = 'none';

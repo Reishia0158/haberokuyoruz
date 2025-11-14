@@ -238,6 +238,10 @@ main {
   border-radius: 4px;
 }
 
+[data-theme='dark'] .favorite-btn {
+  color: #bbb;
+}
+
 .favorite-btn:hover {
   color: var(--accent);
   transform: scale(1.15);
