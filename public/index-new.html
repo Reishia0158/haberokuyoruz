@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Haber Araştırma - Akıllı Haber Platformu</title>
+    <meta
+      name="description"
+      content="AI destekli haber araştırma ve üretim platformu. İstediğiniz konuyu araştırın, AI size haber üretsin."
+    />
+    <meta name="theme-color" content="#6366f1" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="stylesheet" href="/styles-new.css" />
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+            />
+          </svg>
+          <span class="brand-text">AI Haber</span>
+        </div>
+        <div class="navbar-actions">
+          <button id="themeToggle" class="btn-icon" aria-label="Tema değiştir">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-content">
+          <h1 class="hero-title">
+            <span class="gradient-text">AI Destekli</span> Haber Araştırma
+          </h1>
+          <p class="hero-subtitle">
+            İstediğiniz konuyu araştırın, yapay zeka size güncel ve objektif haberler üretsin
+          </p>
+
+          <!-- Search Box -->
+          <div class="search-container">
+            <div class="search-box">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <input
+                type="text"
+                id="searchInput"
+                class="search-input"
+                placeholder="Örn: Türkiye ekonomisi, teknoloji haberleri, spor gelişmeleri..."
+                autocomplete="off"
+              />
+              <button id="searchBtn" class="btn-search">
+                <span>Araştır</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Quick Topics -->
+            <div class="quick-topics">
+              <span class="quick-topics-label">Hızlı konular:</span>
+              <button class="topic-chip" data-topic="Türkiye gündemi">Türkiye Gündemi</button>
+              <button class="topic-chip" data-topic="Ekonomi haberleri">Ekonomi</button>
+              <button class="topic-chip" data-topic="Teknoloji gelişmeleri">Teknoloji</button>
+              <button class="topic-chip" data-topic="Spor haberleri">Spor</button>
+              <button class="topic-chip" data-topic="Sağlık gündemi">Sağlık</button>
+            </div>
+            <div class="cta-row">
+              <button id="topNewsBtn" class="btn-secondary">Önemli Haberleri Göster</button>
+              <span class="cta-hint">AI önem puanına göre sıralı akış</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="container">
+        <!-- Status Bar -->
+        <div class="status-bar" id="statusBar">
+          <div class="status-info" id="statusInfo">
+            <span id="statusText">Önemli haber akışını veya AI aramayı kullanın</span>
+          </div>
+          <div class="status-actions" id="statusActions" hidden>
+            <button id="refreshBtn" class="btn-secondary">Yenile</button>
+            <button id="clearBtn" class="btn-secondary">Temizle</button>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" id="loadingState" hidden>
+          <div class="spinner"></div>
+          <p class="loading-text">AI araştırma yapıyor...</p>
+          <p class="loading-subtext">Bu işlem birkaç saniye sürebilir</p>
+        </div>
+
+        <!-- News Grid -->
+        <div class="news-grid" id="newsGrid"></div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+            />
+          </svg>
+          <h3>Araştırma başlatın</h3>
+          <p>Yukarıdaki arama kutusuna bir konu yazın veya hızlı konulardan birini seçin</p>
+        </div>
+
+        <!-- News Card Template -->
+        <template id="newsCardTemplate">
+          <article class="news-card">
+            <div class="news-card-header">
+              <div class="news-meta">
+                <span class="category-badge"></span>
+                <span class="news-source"></span>
+                <span class="news-time"></span>
+              </div>
+              <div class="news-importance" title="Önem skoru">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                <span class="importance-score"></span>
+              </div>
+            </div>
+            <h2 class="news-title"></h2>
+            <div class="news-summary"></div>
+            <div class="news-content" hidden></div>
+            <div class="news-tags"></div>
+            <div class="news-actions">
+              <button class="btn-read-more">Devamını Oku</button>
+              <button class="btn-favorite" aria-label="Favorilere ekle">★</button>
+            </div>
+          </article>
+        </template>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <p class="footer-text">
+          Bu platform AI (Yapay Zeka) destekli haber araştırma ve üretim sistemi kullanmaktadır. Haberler otomatik
+          olarak üretilir; doğruluk için kaynak kontrolü önerilir.
+        </p>
+      </div>
+    </footer>
+
+    <!-- Modal for Full Article -->
+    <div class="modal" id="articleModal" hidden>
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <button class="modal-close" id="modalClose">×</button>
+        <div class="modal-header">
+          <h2 class="modal-title" id="modalTitle"></h2>
+          <div class="modal-meta" id="modalMeta"></div>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+      </div>
+    </div>
+
+    <script src="/app-new.js" type="module"></script>
+  </body>
+</html>

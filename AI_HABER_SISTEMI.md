@@ -1,36 +1,35 @@
-# 🤖 AI Destekli Otomatik Haber Yönetim Sistemi
+# AI Destekli Otomatik Haber Yönetim Sistemi
 
-## ✨ Ne Yapıyor?
+## Bu Sistem Ne Yapıyor?
 
-AI artık **sizin yerinize** haberleri yönetiyor:
+AI, internetten çekilen son haberleri analiz eder ve önceliklendirir:
 
-1. **📊 Önem Analizi**: Her habere 1-10 arası önem skoru veriyor
-2. **🏷️ Akıllı Kategorizasyon**: Haberleri doğru kategoriye yerleştiriyor
-3. **🔖 Otomatik Etiketleme**: Haberlerle ilgili etiketler ekliyor
-4. **🚫 Spam Filtreleme**: Önemsiz/tekrar/spam haberleri otomatik filtreliyor
-5. **⭐ Önceliklendirme**: Önemli haberler önce gösteriliyor
+1. **Önem Skoru (1-10)**: Her habere ağırlık verilir, en kritik olanlar öne çıkar.
+2. **Akıllı Kategorizasyon**: Gündem, ekonomi, spor, teknoloji vb. doğru kategoriye yerleştirilir.
+3. **Otomatik Etiketleme**: İlgili anahtar kelimeler eklenir.
+4. **Spam/Önemsiz Filtreleme**: Tekrar veya düşük değerli haberler elenir.
+5. **Önceliklendirilmiş Akış**: Önemli haberler ilk sırada gösterilir.
 
-## 🎯 Nasıl Çalışıyor?
+## Nasıl Çalışıyor?
 
-### 1. RSS'den Haberler Çekilir
-- Tüm RSS kaynaklarından haberler otomatik çekilir
+### 1) RSS’ten Haber Toplama
+- TRT Haber, AA, Hürriyet, Sözcü, NTV vb. 30+ kaynaktan RSS akışları otomatik çekilir.
 
-### 2. AI Analiz Yapar
-- Her haber AI tarafından analiz edilir
+### 2) AI Analizi (Gemini)
 - Önem skoru belirlenir (1-10)
 - Kategori tespit edilir
-- Etiketler eklenir
-- Yayınlanacak mı kararı verilir
+- Etiketler oluşturulur
+- Yayınlanıp yayınlanmayacağına karar verilir
 
-### 3. Otomatik İşlemler
-- Önemli haberler önce gösterilir
-- Spam/önemsiz haberler filtrelenir
-- Veritabanına kaydedilir
-- AI özetleri oluşturulur
+### 3) Otomatik İşlemler
+- Önemli haberler önce listelenir
+- Spam/önemsiz olanlar filtrelenir
+- Özet ve ön izleme metni üretilir (Gemini özetleri)
+- Veritabanına kaydedilir (JSON)
 
-## ⚙️ Ayarlar
+## Ortam Değişkenleri
 
-`.env` dosyasında:
+`.env` dosyanıza ekleyin:
 
 ```bash
 # Gemini API anahtarı (zorunlu)
@@ -43,61 +42,56 @@ AI_ANALYSIS_LIMIT=30
 GEMINI_MODEL="gemini-1.5-flash-001"
 ```
 
-## 📊 AI Analiz Sonuçları
+## AI Analiz Örneği
 
-Her haber için AI şunları sağlar:
-
-```javascript
+```jsonc
 {
-  importance: 7,        // 1-10 arası önem skoru
-  category: "ekonomi",  // Kategori
-  tags: ["dolar", "enflasyon"], // Etiketler
-  shouldPublish: true   // Yayınlanacak mı?
+  "importance": 7,          // 1-10 arası önem skoru
+  "category": "ekonomi",    // Kategori
+  "tags": ["dolar", "enflasyon"], // Etiketler
+  "shouldPublish": true     // Yayınlanacak mı?
 }
 ```
 
-## 🚀 Avantajlar
+## Avantajlar
 
-1. **Sıfır Manuel İş**: AI her şeyi otomatik yapıyor
-2. **Akıllı Filtreleme**: Spam/önemsiz haberler otomatik filtreleniyor
-3. **Önceliklendirme**: Önemli haberler önce gösteriliyor
-4. **Doğru Kategorizasyon**: AI kategorileri daha doğru belirliyor
-5. **Etiketleme**: Haberler otomatik etiketleniyor
+1. **Sıfır Manuel İş**: AI toplar, analiz eder, sıralar.
+2. **Akıllı Filtre**: Spam/önemsiz içerik otomatik elenir.
+3. **Önceliklendirme**: En önemli haberler ilk gösterilir.
+4. **Doğru Kategorizasyon**: Yanlış kategori riski düşer.
+5. **Otomatik Etiketler**: Arama ve SEO için hazır.
 
-## 💡 Örnek Senaryo
+## Örnek Akış
 
-1. RSS'den 50 haber çekilir
+1. RSS’ten 50 haber çekilir
 2. AI ilk 30 haberi analiz eder
-3. 5 haber spam/önemsiz olarak işaretlenir → Filtrelenir
+3. 5 spam/önemsiz haber elenir
 4. Kalan 25 haber önem skoruna göre sıralanır
-5. En önemli haberler önce gösterilir
-6. Her haber doğru kategoriye yerleştirilir
-7. Etiketler eklenir
-8. Veritabanına kaydedilir
+5. En önemli haberler öne alınır, kategori ve etiketler eklenir
+6. Özet üretilir ve veritabanına kaydedilir
 
-## ⚠️ Notlar
+## Notlar
 
-- AI analizi için Gemini API anahtarı gereklidir
-- İlk 30 haber analiz edilir (performans için)
-- Analiz edilmeyen haberler de yayınlanır (varsayılan değerlerle)
-- AI hata verirse sistem normal çalışmaya devam eder
+- Gemini API anahtarı yoksa sistem temel (kurallı) özet ve sıralama ile çalışmaya devam eder.
+- İlk 30 haber AI ile analiz edilir (performans için); limiti `AI_ANALYSIS_LIMIT` ile artırabilirsiniz.
+- RSS erişiminde sorun olursa veritabanındaki son içerikler gösterilir.
 
-## 🔧 Gelişmiş Kullanım
+## Gelişmiş Kullanım
 
-### Daha Fazla Haber Analiz Etmek İçin:
+### Daha Fazla Haber Analiz Etmek
 
 ```bash
 # .env dosyasında
 AI_ANALYSIS_LIMIT=50  # İlk 50 haberi analiz et
 ```
 
-### AI Analizini Kapatmak İçin:
+### AI Analizini Kapamak
 
 ```bash
 # .env dosyasında GEMINI_API_KEY'i kaldır veya boş bırak
-# Sistem normal çalışmaya devam eder
+# Sistem temel akışla çalışmaya devam eder
 ```
 
 ---
 
-**Artık AI sizin yerinize haberleri yönetiyor! 🎉**
+Artık haberokuyoruz.com için AI, önemli haberleri bulup getiriyor.

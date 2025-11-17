@@ -1,4 +1,4 @@
-import './lib/env.js';
+﻿import './lib/env.js';
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -15,43 +15,48 @@ import {
   sortByImportance, 
   filterPublishable 
 } from './lib/ai-news-manager.js';
+import { 
+  researchAndGenerateNews, 
+  searchAndGenerateNews,
+  generateTrendingNews 
+} from './lib/ai-researcher.js';
 
 const PORT = process.env.PORT || 3000;
-const CACHE_TTL = 3 * 60 * 1000; // 3 minutes (daha sık güncelleme)
+const CACHE_TTL = 3 * 60 * 1000; // 3 minutes (daha sÄ±k gÃ¼ncelleme)
 const MAX_RESULTS = 200;
 
 const RSS_SOURCES = [
-  { name: 'TRT Haber', url: 'https://www.trthaber.com/manset.rss', category: 'gündem' },
-  { name: 'Anadolu Ajansı', url: 'https://www.aa.com.tr/tr/rss/default?cat=guncel', category: 'gündem' },
-  { name: 'Habertürk', url: 'https://www.haberturk.com/rss/manset.xml', category: 'gündem' },
-  { name: 'NTV', url: 'https://www.ntv.com.tr/gundem.rss', category: 'gündem' },
-  { name: 'Sözcü', url: 'https://www.sozcu.com.tr/rss/anasayfa.xml', category: 'gündem' },
-  { name: 'Sabah', url: 'https://www.sabah.com.tr/rss/gundem.xml', category: 'gündem' },
-  { name: 'Hürriyet', url: 'https://www.hurriyet.com.tr/rss/gundem', category: 'gündem' },
-  { name: 'Milliyet', url: 'https://www.milliyet.com.tr/rss/rssNew/gundemRSS.xml', category: 'gündem' },
-  { name: 'Cumhuriyet', url: 'https://www.cumhuriyet.com.tr/rss/son_dakika.xml', category: 'gündem' },
-  { name: 'Yeni Şafak', url: 'https://www.yenisafak.com/rss/gundem.xml', category: 'gündem' },
-  { name: 'Takvim', url: 'https://www.takvim.com.tr/rss/guncel.xml', category: 'gündem' },
-  { name: 'Star', url: 'https://www.star.com.tr/rss/gundem.xml', category: 'gündem' },
-  { name: 'Mynet Haber', url: 'https://www.mynet.com/haber/rss/kategori/gundem', category: 'gündem' },
-  { name: 'SonDakika.com', url: 'https://www.sondakika.com/rss/', category: 'gündem' },
-  { name: 'En Son Haber', url: 'https://www.ensonhaber.com/rss/ensonhaber.xml', category: 'gündem' },
-  { name: 'CNN Türk', url: 'https://www.cnnturk.com/feed/rss/turkiye/news', category: 'gündem' },
+  { name: 'TRT Haber', url: 'https://www.trthaber.com/manset.rss', category: 'gÃ¼ndem' },
+  { name: 'Anadolu AjansÄ±', url: 'https://www.aa.com.tr/tr/rss/default?cat=guncel', category: 'gÃ¼ndem' },
+  { name: 'HabertÃ¼rk', url: 'https://www.haberturk.com/rss/manset.xml', category: 'gÃ¼ndem' },
+  { name: 'NTV', url: 'https://www.ntv.com.tr/gundem.rss', category: 'gÃ¼ndem' },
+  { name: 'SÃ¶zcÃ¼', url: 'https://www.sozcu.com.tr/rss/anasayfa.xml', category: 'gÃ¼ndem' },
+  { name: 'Sabah', url: 'https://www.sabah.com.tr/rss/gundem.xml', category: 'gÃ¼ndem' },
+  { name: 'HÃ¼rriyet', url: 'https://www.hurriyet.com.tr/rss/gundem', category: 'gÃ¼ndem' },
+  { name: 'Milliyet', url: 'https://www.milliyet.com.tr/rss/rssNew/gundemRSS.xml', category: 'gÃ¼ndem' },
+  { name: 'Cumhuriyet', url: 'https://www.cumhuriyet.com.tr/rss/son_dakika.xml', category: 'gÃ¼ndem' },
+  { name: 'Yeni Åafak', url: 'https://www.yenisafak.com/rss/gundem.xml', category: 'gÃ¼ndem' },
+  { name: 'Takvim', url: 'https://www.takvim.com.tr/rss/guncel.xml', category: 'gÃ¼ndem' },
+  { name: 'Star', url: 'https://www.star.com.tr/rss/gundem.xml', category: 'gÃ¼ndem' },
+  { name: 'Mynet Haber', url: 'https://www.mynet.com/haber/rss/kategori/gundem', category: 'gÃ¼ndem' },
+  { name: 'SonDakika.com', url: 'https://www.sondakika.com/rss/', category: 'gÃ¼ndem' },
+  { name: 'En Son Haber', url: 'https://www.ensonhaber.com/rss/ensonhaber.xml', category: 'gÃ¼ndem' },
+  { name: 'CNN TÃ¼rk', url: 'https://www.cnnturk.com/feed/rss/turkiye/news', category: 'gÃ¼ndem' },
   { name: 'TRT Spor', url: 'https://www.trthaber.com/spor.rss', category: 'spor' },
   { name: 'Fanatik', url: 'https://www.fanatik.com.tr/rss/spor.xml', category: 'spor' },
   { name: 'NTV Spor', url: 'https://www.ntv.com.tr/spor.rss', category: 'spor' },
   { name: 'Sabah Spor', url: 'https://www.sabah.com.tr/rss/spor.xml', category: 'spor' },
-  { name: 'Hürriyet Spor', url: 'https://www.hurriyet.com.tr/rss/spor', category: 'spor' },
+  { name: 'HÃ¼rriyet Spor', url: 'https://www.hurriyet.com.tr/rss/spor', category: 'spor' },
   { name: 'TRT Ekonomi', url: 'https://www.trthaber.com/ekonomi.rss', category: 'ekonomi' },
   { name: 'Sabah Ekonomi', url: 'https://www.sabah.com.tr/rss/ekonomi.xml', category: 'ekonomi' },
-  { name: 'Hürriyet Ekonomi', url: 'https://www.hurriyet.com.tr/rss/ekonomi', category: 'ekonomi' },
+  { name: 'HÃ¼rriyet Ekonomi', url: 'https://www.hurriyet.com.tr/rss/ekonomi', category: 'ekonomi' },
   { name: 'NTV Teknoloji', url: 'https://www.ntv.com.tr/teknoloji.rss', category: 'teknoloji' },
   { name: 'TRT Teknoloji', url: 'https://www.trthaber.com/teknoloji.rss', category: 'teknoloji' },
-  { name: 'Karaman Gündem', url: 'https://www.karamangundem.com/rss', category: 'karaman' },
+  { name: 'Karaman GÃ¼ndem', url: 'https://www.karamangundem.com/rss', category: 'karaman' },
   { name: 'Karaman Haber', url: 'https://www.karamanhaber.com/feed/', category: 'karaman' },
   { name: 'Karamandan', url: 'https://www.karamandan.com/rss', category: 'karaman' },
-  { name: 'Karaman Postası', url: 'https://www.karamanpostasi.com/rss', category: 'karaman' },
-  { name: 'Karaman Manşet', url: 'https://www.karamanmanset.com/rss', category: 'karaman' }
+  { name: 'Karaman PostasÄ±', url: 'https://www.karamanpostasi.com/rss', category: 'karaman' },
+  { name: 'Karaman ManÅŸet', url: 'https://www.karamanmanset.com/rss', category: 'karaman' }
 ];
 
 const STOP_WORDS = new Set([
@@ -62,31 +67,31 @@ const STOP_WORDS = new Set([
   'fakat',
   'ancak',
   'ise',
-  'için',
+  'iÃ§in',
   'bir',
-  'birkaç',
+  'birkaÃ§',
   'daha',
-  'çok',
+  'Ã§ok',
   'az',
   'bu',
-  'şu',
+  'ÅŸu',
   'o',
   'da',
   'de',
   'ki',
   'mi',
   'ne',
-  'nasıl',
-  'niçin',
+  'nasÄ±l',
+  'niÃ§in',
   'neden',
   'yada',
   'olarak',
-  'üzere',
+  'Ã¼zere',
   'gibi',
   'hem',
   'her',
-  'tüm',
-  'artık',
+  'tÃ¼m',
+  'artÄ±k',
   'zaten',
   'ise'
 ]);
@@ -110,7 +115,19 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Render uyku modu önleme endpoint'i
+  // AI AraÅŸtÄ±rma Endpoint
+  if (url.pathname === '/api/ai-research') {
+    await handleAIResearchEndpoint(req, res);
+    return;
+  }
+
+  // PopÃ¼ler haberler (AI ile otomatik Ã¼retim)
+  if (url.pathname === '/api/trending') {
+    await handleTrendingEndpoint(res);
+    return;
+  }
+
+  // Render uyku modu Ã¶nleme endpoint'i
   if (url.pathname === '/api/ping' || url.pathname === '/ping') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ 
@@ -133,13 +150,22 @@ async function handleNewsEndpoint(url, res) {
     const query = (url.searchParams.get('q') || '').trim().toLowerCase();
     const sourceFilter = url.searchParams.get('source') || '';
     const categoryFilter = url.searchParams.get('category') || '';
-    const sortBy = url.searchParams.get('sort') || 'newest'; // newest, oldest
+    const sortBy = url.searchParams.get('sort') || 'importance'; // importance, newest, oldest
     const dateFilter = url.searchParams.get('date') || ''; // today, week, month
+    const importanceMin = Number(url.searchParams.get('importanceMin') || 0);
+    const limit = Math.max(1, Math.min(Number(url.searchParams.get('limit') || MAX_RESULTS), MAX_RESULTS));
     const items = await getNewsItems();
+
+    const importanceScore = (item) => {
+      const aiImportance = item.importance ?? item.aiAnalysis?.importance;
+      if (typeof aiImportance === 'number') return aiImportance;
+      return 0;
+    };
 
     let filtered = items.filter((item) => {
       const matchesSource = sourceFilter ? item.source === sourceFilter : true;
       const matchesCategory = categoryFilter ? item.category === categoryFilter : true;
+      const matchesImportance = importanceScore(item) >= importanceMin;
       
       // Tarih filtresi
       let matchesDate = true;
@@ -155,20 +181,24 @@ async function handleNewsEndpoint(url, res) {
       }
       
       if (!query) {
-        return matchesSource && matchesCategory && matchesDate;
+        return matchesSource && matchesCategory && matchesDate && matchesImportance;
       }
       const haystack = `${item.title} ${item.summary} ${item.description}`.toLowerCase();
-      return matchesSource && matchesCategory && matchesDate && haystack.includes(query);
+      return matchesSource && matchesCategory && matchesDate && matchesImportance && haystack.includes(query);
     });
 
     // Sıralama
     if (sortBy === 'oldest') {
       filtered.sort((a, b) => new Date(a.publishedAt) - new Date(b.publishedAt));
+    } else if (sortBy === 'importance') {
+      filtered.sort((a, b) => {
+        const diff = importanceScore(b) - importanceScore(a);
+        return diff !== 0 ? diff : new Date(b.publishedAt) - new Date(a.publishedAt);
+      });
     } else {
       filtered.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
     }
 
-    // Kategorileri topla
     const categories = [...new Set(items.map(item => item.category).filter(Boolean))].sort();
 
     const payload = {
@@ -176,7 +206,7 @@ async function handleNewsEndpoint(url, res) {
       total: filtered.length,
       sources: RSS_SOURCES.map((s) => s.name),
       categories,
-      items: filtered.slice(0, MAX_RESULTS)
+      items: filtered.slice(0, limit)
     };
 
     res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
@@ -186,11 +216,111 @@ async function handleNewsEndpoint(url, res) {
     res.writeHead(500, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Haberlere ulaşılamadı. Lütfen daha sonra tekrar deneyin.' }));
   }
+}// AI AraÅŸtÄ±rma Endpoint Handler
+async function handleAIResearchEndpoint(req, res) {
+  if (req.method !== 'POST') {
+    res.writeHead(405, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Method not allowed' }));
+    return;
+  }
+
+  try {
+    let body = '';
+    for await (const chunk of req) {
+      body += chunk.toString();
+    }
+
+    const { query } = JSON.parse(body || '{}');
+
+    if (!query || typeof query !== 'string' || query.trim().length < 3) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Arama sorgusu en az 3 karakter olmalÄ±' }));
+      return;
+    }
+
+    console.log(`ğŸ” AI araÅŸtÄ±rma isteÄŸi: "${query}"`);
+
+    // AI ile haber araÅŸtÄ±r ve Ã¼ret
+    const articles = await searchAndGenerateNews(query.trim());
+
+    // VeritabanÄ±na kaydet
+    if (articles.length > 0) {
+      try {
+        await saveNewsItems(articles);
+        console.log(`âœ… ${articles.length} AI Ã¼retilen haber kaydedildi`);
+      } catch (dbError) {
+        console.warn('VeritabanÄ± kayÄ±t hatasÄ±:', dbError.message);
+      }
+    }
+
+    res.writeHead(200, { 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store'
+    });
+    res.end(JSON.stringify({
+      success: true,
+      query: query.trim(),
+      articles: articles,
+      count: articles.length,
+      generatedAt: new Date().toISOString()
+    }));
+
+  } catch (error) {
+    console.error('AI araÅŸtÄ±rma hatasÄ±:', error);
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      error: error.message || 'AI araÅŸtÄ±rma yapÄ±lamadÄ±. LÃ¼tfen daha sonra tekrar deneyin.' 
+    }));
+  }
+}
+
+// PopÃ¼ler Haberler Endpoint (AI ile otomatik Ã¼retim)
+async function handleTrendingEndpoint(res) {
+  try {
+    console.log('ğŸ“ˆ PopÃ¼ler haberler Ã¼retiliyor...');
+    
+    const articles = await generateTrendingNews();
+    
+    // VeritabanÄ±na kaydet
+    if (articles.length > 0) {
+      try {
+        await saveNewsItems(articles);
+        console.log(`âœ… ${articles.length} popÃ¼ler haber kaydedildi`);
+      } catch (dbError) {
+        console.warn('VeritabanÄ± kayÄ±t hatasÄ±:', dbError.message);
+      }
+    }
+
+    res.writeHead(200, { 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store'
+    });
+    res.end(JSON.stringify({
+      success: true,
+      articles: articles,
+      count: articles.length,
+      generatedAt: new Date().toISOString()
+    }));
+
+  } catch (error) {
+    console.error('PopÃ¼ler haberler hatasÄ±:', error);
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      error: error.message || 'PopÃ¼ler haberler Ã¼retilemedi.' 
+    }));
+  }
 }
 
 async function serveStaticFile(requestPath, res) {
   try {
-    const safePath = requestPath === '/' ? '/index.html' : requestPath;
+    // Yeni tasarÄ±m iÃ§in index-new.html'i varsayÄ±lan yap
+    let safePath = requestPath === '/' ? '/index-new.html' : requestPath;
+    
+    // Eski index.html'e yÃ¶nlendirme (opsiyonel)
+    if (requestPath === '/old' || requestPath === '/index-old.html') {
+      safePath = '/index.html';
+    }
+    
     const filePath = path.join(PUBLIC_DIR, safePath);
 
     const data = await fs.readFile(filePath);
@@ -203,7 +333,7 @@ async function serveStaticFile(requestPath, res) {
     res.end(data);
   } catch (error) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Sayfa bulunamadı');
+    res.end('Sayfa bulunamadÄ±');
   }
 }
 
@@ -230,12 +360,12 @@ async function getNewsItems() {
   try {
     const now = Date.now();
     
-    // Cache kontrolü (hızlı yanıt için)
+    // Cache kontrolÃ¼ (hÄ±zlÄ± yanÄ±t iÃ§in)
     if (cache.items.length && now - cache.timestamp < CACHE_TTL) {
       return cache.items;
     }
 
-    // RSS'den yeni haberleri çek
+    // RSS'den yeni haberleri Ã§ek
     const responses = await Promise.allSettled(RSS_SOURCES.map(fetchSource));
     const collected = [];
 
@@ -243,54 +373,54 @@ async function getNewsItems() {
       if (result.status === 'fulfilled') {
         collected.push(...result.value);
       } else {
-        console.warn('Kaynak alınamadı:', result.reason?.message || result.reason);
+        console.warn('Kaynak alÄ±namadÄ±:', result.reason?.message || result.reason);
       }
     }
 
     const deduped = dedupeItems(collected);
     deduped.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
     
-    // 🤖 AI ile haber analizi (önem, kategori, etiketler, yayınla mı)
-    console.log('🤖 AI haber analizi başlatılıyor...');
-    const AI_ANALYSIS_LIMIT = Number(process.env.AI_ANALYSIS_LIMIT || 30); // İlk 30 haberi analiz et
+    // ğŸ¤– AI ile haber analizi (Ã¶nem, kategori, etiketler, yayÄ±nla mÄ±)
+    console.log('ğŸ¤– AI haber analizi baÅŸlatÄ±lÄ±yor...');
+    const AI_ANALYSIS_LIMIT = Number(process.env.AI_ANALYSIS_LIMIT || 30); // Ä°lk 30 haberi analiz et
     const analyzed = await analyzeNewsBatch(deduped, AI_ANALYSIS_LIMIT);
     
-    // AI özetleri oluştur
+    // AI Ã¶zetleri oluÅŸtur
     await attachGeminiSummaries(analyzed);
     
-    // Önem skoruna göre sırala (AI'nın önerdiği önemli haberler önce)
+    // Ã–nem skoruna gÃ¶re sÄ±rala (AI'nÄ±n Ã¶nerdiÄŸi Ã¶nemli haberler Ã¶nce)
     const sortedByImportance = sortByImportance(analyzed);
     
-    // Yayınlanacak haberleri filtrele (AI spam/önemsiz haberleri filtreler)
+    // YayÄ±nlanacak haberleri filtrele (AI spam/Ã¶nemsiz haberleri filtreler)
     const publishable = filterPublishable(sortedByImportance);
     
-    console.log(`🤖 AI: ${analyzed.length} haber analiz edildi, ${publishable.length} haber yayınlanacak`);
+    console.log(`ğŸ¤– AI: ${analyzed.length} haber analiz edildi, ${publishable.length} haber yayÄ±nlanacak`);
 
-    // Veritabanına kaydet (otomatik)
+    // VeritabanÄ±na kaydet (otomatik)
     if (publishable.length > 0) {
       try {
         const saved = await saveNewsItems(publishable);
-        console.log(`✅ ${saved} haber veritabanına kaydedildi`);
+        console.log(`âœ… ${saved} haber veritabanÄ±na kaydedildi`);
       } catch (dbError) {
-        console.warn('Veritabanı kayıt hatası:', dbError.message);
+        console.warn('VeritabanÄ± kayÄ±t hatasÄ±:', dbError.message);
       }
     }
 
-    // Veritabanından tüm haberleri al (RSS kesilse bile içerik var)
+    // VeritabanÄ±ndan tÃ¼m haberleri al (RSS kesilse bile iÃ§erik var)
     let dbNews = [];
     try {
       dbNews = await getAllNewsFromDB();
-      console.log(`📊 Veritabanında ${dbNews.length} haber var`);
+      console.log(`ğŸ“Š VeritabanÄ±nda ${dbNews.length} haber var`);
     } catch (dbError) {
-      console.warn('Veritabanı okuma hatası:', dbError.message);
+      console.warn('VeritabanÄ± okuma hatasÄ±:', dbError.message);
     }
 
-    // RSS'den gelen yeni haberler + veritabanındaki eski haberler
-    // Yeni haberler öncelikli, sonra veritabanından
+    // RSS'den gelen yeni haberler + veritabanÄ±ndaki eski haberler
+    // Yeni haberler Ã¶ncelikli, sonra veritabanÄ±ndan
     const allNews = [...publishable];
     const existingLinks = new Set(publishable.map(item => item.link));
     
-    // Veritabanından sadece RSS'de olmayan haberleri ekle
+    // VeritabanÄ±ndan sadece RSS'de olmayan haberleri ekle
     for (const dbItem of dbNews) {
       if (!existingLinks.has(dbItem.link)) {
         allNews.push({
@@ -308,19 +438,19 @@ async function getNewsItems() {
       }
     }
 
-    // Tarihe göre sırala
+    // Tarihe gÃ¶re sÄ±rala
     allNews.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
 
-    // Cache'i güncelle
+    // Cache'i gÃ¼ncelle
     cache.items = allNews;
     cache.timestamp = now;
 
-    // Eski haberleri temizle (30 günden eski, arka planda)
+    // Eski haberleri temizle (30 gÃ¼nden eski, arka planda)
     setImmediate(async () => {
       try {
         const deleted = await cleanOldNewsFromDB();
         if (deleted.changes > 0) {
-          console.log(`🧹 ${deleted.changes} eski haber temizlendi`);
+          console.log(`ğŸ§¹ ${deleted.changes} eski haber temizlendi`);
         }
       } catch (err) {
         // Sessizce devam et
@@ -329,13 +459,13 @@ async function getNewsItems() {
 
     return allNews;
   } catch (error) {
-    console.error('getNewsItems hatası:', error);
+    console.error('getNewsItems hatasÄ±:', error);
     
-    // Hata durumunda veritabanından oku
+    // Hata durumunda veritabanÄ±ndan oku
     try {
       const dbNews = await getAllNewsFromDB();
       if (dbNews.length > 0) {
-        console.log('⚠️ RSS hatası, veritabanından haberler gösteriliyor');
+        console.log('âš ï¸ RSS hatasÄ±, veritabanÄ±ndan haberler gÃ¶steriliyor');
         return dbNews.map(item => ({
           id: item.id,
           title: item.title,
@@ -350,7 +480,7 @@ async function getNewsItems() {
         }));
       }
     } catch (dbError) {
-      console.warn('Veritabanı yedek okuma hatası:', dbError.message);
+      console.warn('VeritabanÄ± yedek okuma hatasÄ±:', dbError.message);
     }
     
     return cache.items.length > 0 ? cache.items : [];
@@ -360,7 +490,7 @@ async function getNewsItems() {
 async function fetchSource(source) {
   const response = await fetch(source.url, { headers: { 'User-Agent': 'HaberOkuyoruzBot/1.0 (+https://haberokuyoruz.com)' } });
   if (!response.ok) {
-    throw new Error(`${source.name} kaynak hatası: ${response.status}`);
+    throw new Error(`${source.name} kaynak hatasÄ±: ${response.status}`);
   }
 
   const xml = await response.text();
@@ -405,44 +535,44 @@ function parseRss(xml) {
 
 
 function detectCategory(item, sourceCategory) {
-  // Özel kategorileri koru (karaman gibi)
+  // Ã–zel kategorileri koru (karaman gibi)
   if (sourceCategory === 'karaman') {
     return 'karaman';
   }
   
   const text = `${item.title} ${item.description || ''}`.toLowerCase();
   
-  // ÖNCE: Ekonomi OLMAYAN kelimeleri kontrol et (öncelikli)
+  // Ã–NCE: Ekonomi OLMAYAN kelimeleri kontrol et (Ã¶ncelikli)
   const ekonomiOlmayanKelime = [
-    'şehit', 'şehid', 'asker', 'askeri', 'kaza', 'uçak', 'düşen', 'düştü', 'ölü', 'yaralı',
-    'milli savunma', 'msb', 'tsk', 'silahlı kuvvetler', 'hava kuvvetleri', 'kara kuvvetleri',
-    'cenaze', 'naaş', 'kahraman', 'vatan', 'bayrak', 'tören', 'anma', 'uğurlama', 'uğurluyoruz',
-    'gürcistan', 'kafkasya', 'kara kutu', 'herkül', 'c-130', 'c130', 'c130 herkül',
-    'deprem', 'sel', 'yangın', 'afet', 'doğal afet',
-    'suç', 'cinayet', 'tutuklama', 'mahkeme', 'dava', 'polis', 'jandarma',
-    'sağlık', 'hastane', 'doktor', 'tedavi', 'zehir', 'zehirlenme', 'entübe',
-    'güzellik', 'botoks', 'dermatoloji', 'çocuk', 'çocuklar'
+    'ÅŸehit', 'ÅŸehid', 'asker', 'askeri', 'kaza', 'uÃ§ak', 'dÃ¼ÅŸen', 'dÃ¼ÅŸtÃ¼', 'Ã¶lÃ¼', 'yaralÄ±',
+    'milli savunma', 'msb', 'tsk', 'silahlÄ± kuvvetler', 'hava kuvvetleri', 'kara kuvvetleri',
+    'cenaze', 'naaÅŸ', 'kahraman', 'vatan', 'bayrak', 'tÃ¶ren', 'anma', 'uÄŸurlama', 'uÄŸurluyoruz',
+    'gÃ¼rcistan', 'kafkasya', 'kara kutu', 'herkÃ¼l', 'c-130', 'c130', 'c130 herkÃ¼l',
+    'deprem', 'sel', 'yangÄ±n', 'afet', 'doÄŸal afet',
+    'suÃ§', 'cinayet', 'tutuklama', 'mahkeme', 'dava', 'polis', 'jandarma',
+    'saÄŸlÄ±k', 'hastane', 'doktor', 'tedavi', 'zehir', 'zehirlenme', 'entÃ¼be',
+    'gÃ¼zellik', 'botoks', 'dermatoloji', 'Ã§ocuk', 'Ã§ocuklar'
   ];
   
   const ekonomiOlmayanSkor = ekonomiOlmayanKelime.filter(kw => text.includes(kw)).length;
   
-  // Eğer ekonomi olmayan kelimeler varsa, kesinlikle ekonomi değil (kaynak ne olursa olsun)
+  // EÄŸer ekonomi olmayan kelimeler varsa, kesinlikle ekonomi deÄŸil (kaynak ne olursa olsun)
   if (ekonomiOlmayanSkor > 0) {
-    // Eğer kaynak ekonomi ise ama içerik ekonomi değilse, gündem yap
+    // EÄŸer kaynak ekonomi ise ama iÃ§erik ekonomi deÄŸilse, gÃ¼ndem yap
     if (sourceCategory === 'ekonomi') {
-      // Gündem kategorisine ait kelimeleri kontrol et
-      const gundemKelime = ['gündem', 'haber', 'son dakika', 'güncel', 'olay', 'gelişme'];
+      // GÃ¼ndem kategorisine ait kelimeleri kontrol et
+      const gundemKelime = ['gÃ¼ndem', 'haber', 'son dakika', 'gÃ¼ncel', 'olay', 'geliÅŸme'];
       if (gundemKelime.some(kw => text.includes(kw))) {
-        return 'gündem';
+        return 'gÃ¼ndem';
       }
-      // Diğer kategorilere bak
+      // DiÄŸer kategorilere bak
       const categoryKeywords = {
-        spor: ['spor', 'futbol', 'basketbol', 'tenis', 'voleybol', 'atletizm', 'takım', 'lig', 'maç', 'gol', 'şampiyon', 'futbolcu', 'antrenör'],
-        teknoloji: ['teknoloji', 'yapay zeka', 'ai', 'yazılım', 'donanım', 'telefon', 'bilgisayar', 'internet', 'dijital', 'uygulama', 'app', 'siber'],
-        sağlık: ['sağlık', 'hastane', 'doktor', 'tedavi', 'ilaç', 'virüs', 'hastalık', 'aşı', 'sağlık bakanlığı', 'ameliyat', 'zehir', 'zehirlenme', 'entübe', 'güzellik', 'botoks', 'dermatoloji'],
-        siyaset: ['siyaset', 'parti', 'seçim', 'meclis', 'bakan', 'cumhurbaşkanı', 'başbakan', 'milletvekili', 'oy', 'seçmen'],
-        kültür: ['kültür', 'sanat', 'sinema', 'müzik', 'kitap', 'tiyatro', 'sergi', 'konser', 'film', 'dizi'],
-        dünya: ['dünya', 'uluslararası', 'abd', 'avrupa', 'rusya', 'çin', 'nato', 'bm', 'birleşmiş milletler', 'avrupa birliği']
+        spor: ['spor', 'futbol', 'basketbol', 'tenis', 'voleybol', 'atletizm', 'takÄ±m', 'lig', 'maÃ§', 'gol', 'ÅŸampiyon', 'futbolcu', 'antrenÃ¶r'],
+        teknoloji: ['teknoloji', 'yapay zeka', 'ai', 'yazÄ±lÄ±m', 'donanÄ±m', 'telefon', 'bilgisayar', 'internet', 'dijital', 'uygulama', 'app', 'siber'],
+        saÄŸlÄ±k: ['saÄŸlÄ±k', 'hastane', 'doktor', 'tedavi', 'ilaÃ§', 'virÃ¼s', 'hastalÄ±k', 'aÅŸÄ±', 'saÄŸlÄ±k bakanlÄ±ÄŸÄ±', 'ameliyat', 'zehir', 'zehirlenme', 'entÃ¼be', 'gÃ¼zellik', 'botoks', 'dermatoloji'],
+        siyaset: ['siyaset', 'parti', 'seÃ§im', 'meclis', 'bakan', 'cumhurbaÅŸkanÄ±', 'baÅŸbakan', 'milletvekili', 'oy', 'seÃ§men'],
+        kÃ¼ltÃ¼r: ['kÃ¼ltÃ¼r', 'sanat', 'sinema', 'mÃ¼zik', 'kitap', 'tiyatro', 'sergi', 'konser', 'film', 'dizi'],
+        dÃ¼nya: ['dÃ¼nya', 'uluslararasÄ±', 'abd', 'avrupa', 'rusya', 'Ã§in', 'nato', 'bm', 'birleÅŸmiÅŸ milletler', 'avrupa birliÄŸi']
       };
       
       for (const [category, keywords] of Object.entries(categoryKeywords)) {
@@ -451,18 +581,18 @@ function detectCategory(item, sourceCategory) {
         }
       }
       
-      return 'gündem';
+      return 'gÃ¼ndem';
     }
-    // Kaynak ekonomi değilse, normal kategori tespitine devam et
+    // Kaynak ekonomi deÄŸilse, normal kategori tespitine devam et
   }
   
-  // Kaynak kategorisini kullan (ama ekonomi için çok sıkı kontrol)
-  if (sourceCategory && sourceCategory !== 'gündem') {
+  // Kaynak kategorisini kullan (ama ekonomi iÃ§in Ã§ok sÄ±kÄ± kontrol)
+  if (sourceCategory && sourceCategory !== 'gÃ¼ndem') {
     if (sourceCategory === 'ekonomi') {
-      const ekonomiKeywords = ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'şirket', 'yatırım', 'kredi', 'bütçe', 'maliye', 'finans', 'bankacılık', 'hisse', 'senedi', 'endeks', 'hisse senedi', 'döviz', 'altın', 'petrol', 'enerji', 'sanayi', 'üretim', 'ihracat', 'ithalat', 'gdp', 'gsyh', 'kara para', 'aklama', 'coino', 'kripto', 'bitcoin', 'kripto para'];
+      const ekonomiKeywords = ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'ÅŸirket', 'yatÄ±rÄ±m', 'kredi', 'bÃ¼tÃ§e', 'maliye', 'finans', 'bankacÄ±lÄ±k', 'hisse', 'senedi', 'endeks', 'hisse senedi', 'dÃ¶viz', 'altÄ±n', 'petrol', 'enerji', 'sanayi', 'Ã¼retim', 'ihracat', 'ithalat', 'gdp', 'gsyh', 'kara para', 'aklama', 'coino', 'kripto', 'bitcoin', 'kripto para'];
       const ekonomiKelimeSayisi = ekonomiKeywords.filter(kw => text.includes(kw)).length;
       
-      // Başlıkta ekonomi kelimesi kontrolü
+      // BaÅŸlÄ±kta ekonomi kelimesi kontrolÃ¼
       const baslikEkonomi = item.title.toLowerCase().includes('ekonomi') || 
                            item.title.toLowerCase().includes('borsa') || 
                            item.title.toLowerCase().includes('dolar') ||
@@ -471,32 +601,32 @@ function detectCategory(item, sourceCategory) {
                            item.title.toLowerCase().includes('kara para') ||
                            item.title.toLowerCase().includes('aklama');
       
-      // En az 2 ekonomi kelimesi olmalı VEYA başlıkta ekonomi kelimesi olmalı
-      // Ayrıca ekonomi olmayan kelimeler olmamalı (yukarıda kontrol edildi)
+      // En az 2 ekonomi kelimesi olmalÄ± VEYA baÅŸlÄ±kta ekonomi kelimesi olmalÄ±
+      // AyrÄ±ca ekonomi olmayan kelimeler olmamalÄ± (yukarÄ±da kontrol edildi)
       if (ekonomiKelimeSayisi < 2 && !baslikEkonomi) {
-        return 'gündem';
+        return 'gÃ¼ndem';
       }
       
-      // Eğer ekonomi kelimeleri varsa ama ekonomi olmayan kelimeler de varsa, gündem yap
+      // EÄŸer ekonomi kelimeleri varsa ama ekonomi olmayan kelimeler de varsa, gÃ¼ndem yap
       if (ekonomiOlmayanSkor > 0 && ekonomiKelimeSayisi < 3) {
-        return 'gündem';
+        return 'gÃ¼ndem';
       }
     }
     return sourceCategory;
   }
   
-  // Başlık ve içerikten kategori tespiti
+  // BaÅŸlÄ±k ve iÃ§erikten kategori tespiti
   const categoryKeywords = {
-    spor: ['spor', 'futbol', 'basketbol', 'tenis', 'voleybol', 'atletizm', 'takım', 'lig', 'maç', 'gol', 'şampiyon', 'futbolcu', 'antrenör'],
-    ekonomi: ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'şirket', 'yatırım', 'kredi', 'bütçe', 'maliye', 'finans', 'bankacılık', 'hisse', 'senedi', 'endeks', 'döviz', 'altın', 'petrol'],
-    teknoloji: ['teknoloji', 'yapay zeka', 'ai', 'yazılım', 'donanım', 'telefon', 'bilgisayar', 'internet', 'dijital', 'uygulama', 'app', 'siber'],
-    sağlık: ['sağlık', 'hastane', 'doktor', 'tedavi', 'ilaç', 'virüs', 'hastalık', 'aşı', 'sağlık bakanlığı', 'ameliyat', 'tedavi'],
-    siyaset: ['siyaset', 'parti', 'seçim', 'meclis', 'bakan', 'cumhurbaşkanı', 'başbakan', 'milletvekili', 'oy', 'seçmen'],
-    kültür: ['kültür', 'sanat', 'sinema', 'müzik', 'kitap', 'tiyatro', 'sergi', 'konser', 'film', 'dizi'],
-    dünya: ['dünya', 'uluslararası', 'abd', 'avrupa', 'rusya', 'çin', 'nato', 'bm', 'birleşmiş milletler', 'avrupa birliği']
+    spor: ['spor', 'futbol', 'basketbol', 'tenis', 'voleybol', 'atletizm', 'takÄ±m', 'lig', 'maÃ§', 'gol', 'ÅŸampiyon', 'futbolcu', 'antrenÃ¶r'],
+    ekonomi: ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'ÅŸirket', 'yatÄ±rÄ±m', 'kredi', 'bÃ¼tÃ§e', 'maliye', 'finans', 'bankacÄ±lÄ±k', 'hisse', 'senedi', 'endeks', 'dÃ¶viz', 'altÄ±n', 'petrol'],
+    teknoloji: ['teknoloji', 'yapay zeka', 'ai', 'yazÄ±lÄ±m', 'donanÄ±m', 'telefon', 'bilgisayar', 'internet', 'dijital', 'uygulama', 'app', 'siber'],
+    saÄŸlÄ±k: ['saÄŸlÄ±k', 'hastane', 'doktor', 'tedavi', 'ilaÃ§', 'virÃ¼s', 'hastalÄ±k', 'aÅŸÄ±', 'saÄŸlÄ±k bakanlÄ±ÄŸÄ±', 'ameliyat', 'tedavi'],
+    siyaset: ['siyaset', 'parti', 'seÃ§im', 'meclis', 'bakan', 'cumhurbaÅŸkanÄ±', 'baÅŸbakan', 'milletvekili', 'oy', 'seÃ§men'],
+    kÃ¼ltÃ¼r: ['kÃ¼ltÃ¼r', 'sanat', 'sinema', 'mÃ¼zik', 'kitap', 'tiyatro', 'sergi', 'konser', 'film', 'dizi'],
+    dÃ¼nya: ['dÃ¼nya', 'uluslararasÄ±', 'abd', 'avrupa', 'rusya', 'Ã§in', 'nato', 'bm', 'birleÅŸmiÅŸ milletler', 'avrupa birliÄŸi']
   };
   
-  // Her kategori için skor hesapla
+  // Her kategori iÃ§in skor hesapla
   const categoryScores = {};
   for (const [category, keywords] of Object.entries(categoryKeywords)) {
     const score = keywords.filter(keyword => text.includes(keyword)).length;
@@ -505,13 +635,13 @@ function detectCategory(item, sourceCategory) {
     }
   }
   
-  // En yüksek skora sahip kategoriyi döndür
+  // En yÃ¼ksek skora sahip kategoriyi dÃ¶ndÃ¼r
   if (Object.keys(categoryScores).length > 0) {
     const bestCategory = Object.entries(categoryScores).sort((a, b) => b[1] - a[1])[0][0];
     return bestCategory;
   }
   
-  return sourceCategory || 'gündem';
+  return sourceCategory || 'gÃ¼ndem';
 }
 
 function getTagValue(block, tag) {
@@ -551,7 +681,7 @@ function summarize(text = '', sentenceCount = 2) {
 
   const words = clean
     .toLowerCase()
-    .match(/[a-z\u00c0-\u024fığüşöçİĞÜŞÖÇ]+/g)
+    .match(/[a-z\u00c0-\u024fÄ±ÄŸÃ¼ÅŸÃ¶Ã§Ä°ÄÃœÅÃ–Ã‡]+/g)
     ?.filter((word) => !STOP_WORDS.has(word)) || [];
 
   const frequencies = words.reduce((acc, word) => {
@@ -563,7 +693,7 @@ function summarize(text = '', sentenceCount = 2) {
     const sentenceWords =
       sentence
         .toLowerCase()
-        .match(/[a-z\u00c0-\u024fığüşöçİĞÜŞÖÇ]+/g)
+        .match(/[a-z\u00c0-\u024fÄ±ÄŸÃ¼ÅŸÃ¶Ã§Ä°ÄÃœÅÃ–Ã‡]+/g)
         ?.filter((word) => !STOP_WORDS.has(word)) || [];
 
     const score = sentenceWords.reduce((total, word) => total + (frequencies[word] || 0), 0);
@@ -585,7 +715,7 @@ function createPreview(text = '', limit = 220) {
   if (trimmed.length <= limit) {
     return trimmed;
   }
-  return `${trimmed.slice(0, limit).trim()}…`;
+  return `${trimmed.slice(0, limit).trim()}â€¦`;
 }
 
 function dedupeItems(items = []) {
@@ -628,7 +758,7 @@ function normalizeKey(item) {
 async function attachGeminiSummaries(items) {
   if (!isGeminiEnabled) return;
 
-  // Sadece ilk 10 önemli haber için AI özeti (performans için)
+  // Sadece ilk 10 Ã¶nemli haber iÃ§in AI Ã¶zeti (performans iÃ§in)
   const limit = Math.min(10, items.length);
   const promises = [];
   
@@ -638,7 +768,7 @@ async function attachGeminiSummaries(items) {
       continue;
     }
 
-    // Paralel işlem için promise array'e ekle
+    // Paralel iÅŸlem iÃ§in promise array'e ekle
     promises.push(
       summarizeWithGemini(item).then(summary => {
         if (summary) {
@@ -650,6 +780,8 @@ async function attachGeminiSummaries(items) {
     );
   }
 
-  // Tüm AI isteklerini paralel çalıştır
+  // TÃ¼m AI isteklerini paralel Ã§alÄ±ÅŸtÄ±r
   await Promise.allSettled(promises);
 }
+
+
