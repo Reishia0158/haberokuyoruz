@@ -239,7 +239,7 @@ async function handleAIResearchEndpoint(req, res) {
       return;
     }
 
-    console.log(AI araştırma isteği: "");
+    console.log(`AI araştırma isteği: "${query}"`);
 
     // Gemini yoksa veritabanında ara ve dön
     if (!isGeminiEnabled) {
