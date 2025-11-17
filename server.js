@@ -24,6 +24,7 @@ import {
 const PORT = process.env.PORT || 3000;
 const CACHE_TTL = 3 * 60 * 1000; // 3 minutes (daha sÄ±k gÃ¼ncelleme)
 const MAX_RESULTS = 200;
+const DISABLE_RSS = process.env.DISABLE_RSS -eq 'true';
 
 const RSS_SOURCES = [
   { name: 'TRT Haber', url: 'https://www.trthaber.com/manset.rss', category: 'gÃ¼ndem' },
@@ -234,26 +235,52 @@ async function handleAIResearchEndpoint(req, res) {
 
     if (!query || typeof query !== 'string' || query.trim().length < 3) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Arama sorgusu en az 3 karakter olmalÄ±' }));
+      res.end(JSON.stringify({ error: 'Arama sorgusu en az 3 karakter olmalı' }));
       return;
     }
 
-    console.log(`ğŸ” AI araÅŸtÄ±rma isteÄŸi: "${query}"`);
+    console.log(AI araştırma isteği: "");
 
-    // AI ile haber araÅŸtÄ±r ve Ã¼ret
+    // Gemini yoksa veritabanında ara ve dön
+    if (!isGeminiEnabled) {
+      const all = await getAllNewsFromDB();
+      const hay = query.trim().toLowerCase();
+      const matched = all
+        .filter((item) => {
+          const text = ${item.title || ''}  .toLowerCase();
+          return text.includes(hay);
+        })
+        .slice(0, 50);
+
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store'
+      });
+      res.end(JSON.stringify({
+        success: true,
+        query: query.trim(),
+        articles: matched,
+        count: matched.length,
+        generatedAt: new Date().toISOString(),
+        fallback: 'db-search'
+      }));
+      return;
+    }
+
+    // AI ile haber araştır ve üret
     const articles = await searchAndGenerateNews(query.trim());
 
-    // VeritabanÄ±na kaydet
+    // Veritabanına kaydet
     if (articles.length > 0) {
       try {
         await saveNewsItems(articles);
-        console.log(`âœ… ${articles.length} AI Ã¼retilen haber kaydedildi`);
+        console.log(${articles.length} AI üretilen haber kaydedildi);
       } catch (dbError) {
-        console.warn('VeritabanÄ± kayÄ±t hatasÄ±:', dbError.message);
+        console.warn('Veritabanı kayıt hatası:', dbError.message);
       }
     }
 
-    res.writeHead(200, { 
+    res.writeHead(200, {
       'Content-Type': 'application/json',
       'Cache-Control': 'no-store'
     });
@@ -266,15 +293,13 @@ async function handleAIResearchEndpoint(req, res) {
     }));
 
   } catch (error) {
-    console.error('AI araÅŸtÄ±rma hatasÄ±:', error);
+    console.error('AI araştırma hatası:', error);
     res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ 
-      error: error.message || 'AI araÅŸtÄ±rma yapÄ±lamadÄ±. LÃ¼tfen daha sonra tekrar deneyin.' 
+    res.end(JSON.stringify({
+      error: error.message || 'AI araştırma yapılamadı. Lütfen daha sonra tekrar deneyin.'
     }));
   }
 }
-
-// PopÃ¼ler Haberler Endpoint (AI ile otomatik Ã¼retim)
 async function handleTrendingEndpoint(res) {
   try {
     console.log('ğŸ“ˆ PopÃ¼ler haberler Ã¼retiliyor...');
@@ -359,7 +384,13 @@ function getContentType(ext) {
 async function getNewsItems() {
   try {
     const now = Date.now();
-    
+    if (DISABLE_RSS) {
+      const dbNews = await getAllNewsFromDB();
+      const sorted = dbNews.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+      cache.items = sorted;
+      cache.timestamp = now;
+      return sorted;
+    }
     // Cache kontrolÃ¼ (hÄ±zlÄ± yanÄ±t iÃ§in)
     if (cache.items.length && now - cache.timestamp < CACHE_TTL) {
       return cache.items;
@@ -384,9 +415,10 @@ async function getNewsItems() {
     console.log('ğŸ¤– AI haber analizi baÅŸlatÄ±lÄ±yor...');
     const AI_ANALYSIS_LIMIT = Number(process.env.AI_ANALYSIS_LIMIT || 30); // Ä°lk 30 haberi analiz et
     const analyzed = await analyzeNewsBatch(deduped, AI_ANALYSIS_LIMIT);
-    
-    // AI Ã¶zetleri oluÅŸtur
-    await attachGeminiSummaries(analyzed);
+    // Gemini varsa özet ekle
+    if (isGeminiEnabled) {
+      await attachGeminiSummaries(analyzed);
+    }
     
     // Ã–nem skoruna gÃ¶re sÄ±rala (AI'nÄ±n Ã¶nerdiÄŸi Ã¶nemli haberler Ã¶nce)
     const sortedByImportance = sortByImportance(analyzed);
@@ -708,3 +740,7 @@ function detectCategory(item, sourceCategory) {
 
   return bestScore > 0 ? bestCategory : (sourceCategory || 'gundem');
 }
+
+
+
+
