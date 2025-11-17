@@ -1,4 +1,4 @@
-// State
+﻿// State
 const MODE_CURATED = 'curated';
 const MODE_AI = 'ai';
 
@@ -79,7 +79,7 @@ function initDOMElements() {
   modalBody = document.getElementById('modalBody');
 
   if (!searchInput || !searchBtn || !newsGrid || !newsCardTemplate) {
-    console.error('Kritik DOM elementleri bulunamadı.');
+    console.error('Kritik DOM elementleri bulunamadÄ±.');
     return false;
   }
   return true;
@@ -133,7 +133,7 @@ function setupEventListeners() {
       currentMode = MODE_CURATED;
       if (searchInput) searchInput.value = '';
       if (newsGrid) newsGrid.innerHTML = '';
-      setStatus('Önemli haber akışını veya AI aramayı kullanın');
+      setStatus('Ã–nemli haber akÄ±ÅŸÄ±nÄ± veya AI aramayÄ± kullanÄ±n');
       if (statusActions) statusActions.hidden = false;
       loadCuratedNews();
     });
@@ -153,31 +153,31 @@ function setupEventListeners() {
 async function loadCuratedNews() {
   currentMode = MODE_CURATED;
   currentTopic = '';
-  showLoading('Önemli haberler getiriliyor...');
+  showLoading('Ã–nemli haberler getiriliyor...');
   hideEmptyState();
   if (newsGrid) newsGrid.innerHTML = '';
 
   try {
-    // importanceMin=0: ai önem puanı gelmese bile haberleri göster
+    // importanceMin=0: ai Ã¶nem puanÄ± gelmese bile haberleri gÃ¶ster
     const res = await fetch('/api/news?sort=importance&importanceMin=0&limit=60');
     if (!res.ok) {
-      throw new Error(`Sunucu hatası: ${res.status}`);
+      throw new Error(`Sunucu hatasÄ±: ${res.status}`);
     }
     const data = await res.json();
     currentArticles = data.items || [];
 
     if (!currentArticles.length) {
-      showEmptyState('Önemli haber bulunamadı.');
-      setStatus('Önemli haber bulunamadı');
+      showEmptyState('Ã–nemli haber bulunamadÄ±.');
+      setStatus('Ã–nemli haber bulunamadÄ±');
     } else {
       renderArticles(currentArticles);
-      setStatus(`AI önem puanına göre ${currentArticles.length} haber listeleniyor`);
+      setStatus(`AI Ã¶nem puanÄ±na gÃ¶re ${currentArticles.length} haber listeleniyor`);
       if (statusActions) statusActions.hidden = false;
     }
   } catch (error) {
-    console.error('Önemli haberler getirilemedi:', error);
-    setStatus(error.message || 'Önemli haberler getirilemedi');
-    showEmptyState(error.message || 'Bir hata oluştu. Yeniden deneyin.');
+    console.error('Ã–nemli haberler getirilemedi:', error);
+    setStatus(error.message || 'Ã–nemli haberler getirilemedi');
+    showEmptyState(error.message || 'Bir hata oluÅŸtu. Yeniden deneyin.');
   } finally {
     hideLoading();
   }
@@ -186,18 +186,18 @@ async function loadCuratedNews() {
 // AI search/news generation
 async function searchNews(topic) {
   if (!topic || topic.trim().length < 3) {
-    alert('Lütfen en az 3 karakter girin');
+    alert('LÃ¼tfen en az 3 karakter girin');
     return;
   }
 
   if (!newsGrid || !statusText) {
-    console.error('DOM elementleri hazır değil!');
+    console.error('DOM elementleri hazÄ±r deÄŸil!');
     return;
   }
 
   currentMode = MODE_AI;
   currentTopic = topic.trim();
-  showLoading('AI araştırma yapıyor...');
+  showLoading('AI araÅŸtÄ±rma yapÄ±yor...');
   hideEmptyState();
   newsGrid.innerHTML = '';
 
@@ -210,7 +210,7 @@ async function searchNews(topic) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Sunucu hatası: ${response.status}`);
+      throw new Error(errorData.error || `Sunucu hatasÄ±: ${response.status}`);
     }
 
     const data = await response.json();
@@ -219,17 +219,17 @@ async function searchNews(topic) {
     currentArticles = data.articles || [];
 
     if (!currentArticles.length) {
-      showEmptyState('Bu konu için haber bulunamadı. Farklı bir konu deneyin.');
-      setStatus('Bu konu için sonuç bulunamadı');
+      showEmptyState('Bu konu iÃ§in haber bulunamadÄ±. FarklÄ± bir konu deneyin.');
+      setStatus('Bu konu iÃ§in sonuÃ§ bulunamadÄ±');
     } else {
       renderArticles(currentArticles);
-      setStatus(`"${currentTopic}" için ${currentArticles.length} haber bulundu`);
+      setStatus(`"${currentTopic}" iÃ§in ${currentArticles.length} haber bulundu`);
       if (statusActions) statusActions.hidden = false;
     }
   } catch (error) {
-    console.error('Arama hatası:', error);
-    setStatus(`Hata: ${error.message || 'Arama yapılamadı'}`);
-    showEmptyState(error.message || 'Bir hata oluştu. Lütfen tekrar deneyin.');
+    console.error('Arama hatasÄ±:', error);
+    setStatus(`Hata: ${error.message || 'Arama yapÄ±lamadÄ±'}`);
+    showEmptyState(error.message || 'Bir hata oluÅŸtu. LÃ¼tfen tekrar deneyin.');
   } finally {
     hideLoading();
   }
@@ -238,7 +238,7 @@ async function searchNews(topic) {
 // Render
 function renderArticles(articles) {
   if (!newsGrid || !newsCardTemplate) {
-    console.error('Render için gerekli elementler bulunamadı!');
+    console.error('Render iÃ§in gerekli elementler bulunamadÄ±!');
     return;
   }
 
@@ -259,7 +259,7 @@ function renderArticles(articles) {
 
     // Source & time
     const sourceEl = card.querySelector('.news-source');
-    sourceEl.textContent = article.source || 'AI Araştırma';
+    sourceEl.textContent = article.source || 'AI AraÅŸtÄ±rma';
 
     const timeEl = card.querySelector('.news-time');
     timeEl.textContent = article.publishedAt ? formatRelativeTime(article.publishedAt) : '';
@@ -267,20 +267,21 @@ function renderArticles(articles) {
     // Importance
     const importanceEl = card.querySelector('.importance-score');
     const importanceValue = article.importance ?? article.aiAnalysis?.importance;
-    importanceEl.textContent = typeof importanceValue === 'number' ? importanceValue : '–';
+    importanceEl.textContent = typeof importanceValue === 'number' ? importanceValue : 'â€“';
 
     // Title
     const titleEl = card.querySelector('.news-title');
-    titleEl.textContent = article.title || 'Başlıksız Haber';
+    titleEl.textContent = article.title || 'BaÅŸlÄ±ksÄ±z Haber';
 
     // Summary
     const summaryEl = card.querySelector('.news-summary');
     const summaryText = article.aiSummary || article.summary || article.preview || article.description || '';
     summaryEl.textContent = summaryText;
 
-    // Content
+    // Content (uzun icerik varsa modal icin)
     const contentEl = card.querySelector('.news-content');
-    const fullContent = article.content || article.description || article.summary || summaryText || 'İçerik bulunamadı.';
+    const hasLongContent = Boolean(article.content && article.content.trim().length > 80);
+    const fullContent = article.content || article.description || article.summary || summaryText || 'Icerik bulunamadi.';
     contentEl.textContent = fullContent;
 
     // Tags
@@ -296,9 +297,21 @@ function renderArticles(articles) {
       tagsEl.style.display = 'none';
     }
 
-    // Read more
+    // Read more / Kaynaga git
     const readMoreBtn = card.querySelector('.btn-read-more');
-    readMoreBtn.addEventListener('click', () => showArticleModal(article));
+    if (hasLongContent) {
+      readMoreBtn.textContent = 'Devamini Oku';
+      readMoreBtn.addEventListener('click', () => showArticleModal(article));
+    } else {
+      readMoreBtn.textContent = 'Kaynaga Git';
+      readMoreBtn.addEventListener('click', () => {
+        if (article.link) {
+          window.open(article.link, '_blank', 'noopener');
+        } else {
+          showArticleModal(article);
+        }
+      });
+    }
 
     // Favorites
     const articleId = article.id || article.link || article.title || Math.random().toString(36).slice(2);
@@ -321,7 +334,7 @@ function showArticleModal(article) {
     article.category ? `Kategori: ${article.category}` : '',
     article.source ? `Kaynak: ${article.source}` : '',
     article.publishedAt ? formatRelativeTime(article.publishedAt) : '',
-    typeof article.importance === 'number' ? `Önem: ${article.importance}/10` : ''
+    typeof article.importance === 'number' ? `Ã–nem: ${article.importance}/10` : ''
   ].filter(Boolean);
 
   metaItems.forEach((item) => {
@@ -330,7 +343,7 @@ function showArticleModal(article) {
     modalMeta.appendChild(span);
   });
 
-  modalBody.textContent = article.content || article.description || article.summary || 'İçerik bulunamadı.';
+  modalBody.textContent = article.content || article.description || article.summary || "Icerik bulunamadi.";
 
   articleModal.hidden = false;
   document.body.style.overflow = 'hidden';
@@ -382,19 +395,19 @@ function formatRelativeTime(isoString) {
   const diffMs = Date.now() - new Date(isoString).getTime();
   const diffMinutes = Math.round(diffMs / 60000);
 
-  if (diffMinutes < 1) return 'az önce';
-  if (diffMinutes < 60) return `${diffMinutes} dk önce`;
+  if (diffMinutes < 1) return 'az Ã¶nce';
+  if (diffMinutes < 60) return `${diffMinutes} dk Ã¶nce`;
 
   const diffHours = Math.round(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours} saat önce`;
+  if (diffHours < 24) return `${diffHours} saat Ã¶nce`;
 
   const diffDays = Math.round(diffHours / 24);
-  if (diffDays < 7) return `${diffDays} gün önce`;
+  if (diffDays < 7) return `${diffDays} gÃ¼n Ã¶nce`;
 
   return new Date(isoString).toLocaleDateString('tr-TR');
 }
 
-function showLoading(message = 'Yükleniyor...') {
+function showLoading(message = 'YÃ¼kleniyor...') {
   if (loadingState) loadingState.hidden = false;
   setStatus(message);
 }
@@ -403,7 +416,7 @@ function hideLoading() {
   if (loadingState) loadingState.hidden = true;
 }
 
-function showEmptyState(message = 'Bir konu araştırın veya hızlı konulardan birini seçin') {
+function showEmptyState(message = 'Bir konu araÅŸtÄ±rÄ±n veya hÄ±zlÄ± konulardan birini seÃ§in') {
   if (!emptyState) return;
   emptyState.hidden = false;
   const p = emptyState.querySelector('p');
@@ -420,10 +433,16 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker
       .register('/sw.js')
       .then((registration) => {
-        console.log('Service Worker kayıtlı:', registration.scope);
+        console.log('Service Worker kayÄ±tlÄ±:', registration.scope);
       })
       .catch((error) => {
-        console.log('Service Worker kaydı başarısız:', error);
+        console.log('Service Worker kaydÄ± baÅŸarÄ±sÄ±z:', error);
       });
   });
 }
+
+
+
+
+
+
