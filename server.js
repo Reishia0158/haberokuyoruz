@@ -274,7 +274,7 @@ async function handleAIResearchEndpoint(req, res) {
     if (articles.length > 0) {
       try {
         await saveNewsItems(articles);
-        console.log(${articles.length} AI üretilen haber kaydedildi);
+        console.log(`${articles.length} AI üretilen haber kaydedildi`);
       } catch (dbError) {
         console.warn('Veritabanı kayıt hatası:', dbError.message);
       }
