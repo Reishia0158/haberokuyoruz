@@ -534,40 +534,6 @@ function parseRss(xml) {
 }
 
 
-function detectCategory(item, sourceCategory) {
-  if (sourceCategory === "karaman") return "karaman";
-
-  const text = `${item.title} ${item.description || ""}`.toLocaleLowerCase('tr-TR');
-
-  const categoryKeywords = {
-    ekonomi: ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'yatırım', 'kredi', 'bütçe', 'maliye', 'finans', 'bankacılık', 'hisse', 'senedi', 'endeks', 'döviz', 'altın', 'petrol', 'enerji', 'sanayi'],
-    spor: ['spor', 'futbol', 'basketbol', 'tenis', 'voleybol', 'atletizm', 'takım', 'lig', 'maç', 'gol', 'şampiyon', 'futbolcu', 'antrenör'],
-    teknoloji: ['teknoloji', 'yapay zeka', 'ai', 'yazılım', 'donanım', 'telefon', 'bilgisayar', 'internet', 'dijital', 'uygulama', 'siber'],
-    sağlık: ['sağlık', 'hastane', 'doktor', 'tedavi', 'ilaç', 'virüs', 'hastalık', 'aşı', 'sağlık bakanlığı', 'ameliyat'],
-    siyaset: ['siyaset', 'parti', 'seçim', 'meclis', 'bakan', 'cumhurbaşkanı', 'başbakan', 'milletvekili', 'oy', 'seçmen'],
-    kültür: ['kültür', 'sanat', 'sinema', 'müzik', 'kitap', 'tiyatro', 'sergi', 'konser', 'film', 'dizi'],
-    dünya: ['dünya', 'uluslararası', 'abd', 'avrupa', 'rusya', 'çin', 'nato', 'bm', 'birleşmiş milletler', 'avrupa birliği']
-  };
-
-  const scores = {};
-  for (const [category, keywords] of Object.entries(categoryKeywords)) {
-    scores[category] = keywords.filter((kw) => text.includes(kw)).length;
-  }
-
-  let bestCategory = sourceCategory || 'gündem';
-  let bestScore = scores[bestCategory] || 0;
-
-  for (const [category, score] of Object.entries(scores)) {
-    if (score > bestScore) {
-      bestCategory = category;
-      bestScore = score;
-    }
-  }
-
-  return bestScore > 0 ? bestCategory : (sourceCategory || 'gündem');
-}
-
-
 function getTagValue(block, tag) {
   const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i');
   const match = block.match(regex);
