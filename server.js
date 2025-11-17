@@ -24,7 +24,7 @@ import {
 const PORT = process.env.PORT || 3000;
 const CACHE_TTL = 3 * 60 * 1000; // 3 minutes (daha sÄ±k gÃ¼ncelleme)
 const MAX_RESULTS = 200;
-const DISABLE_RSS = process.env.DISABLE_RSS -eq 'true';
+const DISABLE_RSS = (process.env.DISABLE_RSS || 'false').toLowerCase() === 'true';
 
 const RSS_SOURCES = [
   { name: 'TRT Haber', url: 'https://www.trthaber.com/manset.rss', category: 'gÃ¼ndem' },
