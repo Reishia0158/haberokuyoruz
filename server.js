@@ -535,114 +535,38 @@ function parseRss(xml) {
 
 
 function detectCategory(item, sourceCategory) {
-  // Ã–zel kategorileri koru (karaman gibi)
-  if (sourceCategory === 'karaman') {
-    return 'karaman';
-  }
-  
-  const text = `${item.title} ${item.description || ''}`.toLowerCase();
-  
-  // Ã–NCE: Ekonomi OLMAYAN kelimeleri kontrol et (Ã¶ncelikli)
-  const ekonomiOlmayanKelime = [
-    'ÅŸehit', 'ÅŸehid', 'asker', 'askeri', 'kaza', 'uÃ§ak', 'dÃ¼ÅŸen', 'dÃ¼ÅŸtÃ¼', 'Ã¶lÃ¼', 'yaralÄ±',
-    'milli savunma', 'msb', 'tsk', 'silahlÄ± kuvvetler', 'hava kuvvetleri', 'kara kuvvetleri',
-    'cenaze', 'naaÅŸ', 'kahraman', 'vatan', 'bayrak', 'tÃ¶ren', 'anma', 'uÄŸurlama', 'uÄŸurluyoruz',
-    'gÃ¼rcistan', 'kafkasya', 'kara kutu', 'herkÃ¼l', 'c-130', 'c130', 'c130 herkÃ¼l',
-    'deprem', 'sel', 'yangÄ±n', 'afet', 'doÄŸal afet',
-    'suÃ§', 'cinayet', 'tutuklama', 'mahkeme', 'dava', 'polis', 'jandarma',
-    'saÄŸlÄ±k', 'hastane', 'doktor', 'tedavi', 'zehir', 'zehirlenme', 'entÃ¼be',
-    'gÃ¼zellik', 'botoks', 'dermatoloji', 'Ã§ocuk', 'Ã§ocuklar'
-  ];
-  
-  const ekonomiOlmayanSkor = ekonomiOlmayanKelime.filter(kw => text.includes(kw)).length;
-  
-  // EÄŸer ekonomi olmayan kelimeler varsa, kesinlikle ekonomi deÄŸil (kaynak ne olursa olsun)
-  if (ekonomiOlmayanSkor > 0) {
-    // EÄŸer kaynak ekonomi ise ama iÃ§erik ekonomi deÄŸilse, gÃ¼ndem yap
-    if (sourceCategory === 'ekonomi') {
-      // GÃ¼ndem kategorisine ait kelimeleri kontrol et
-      const gundemKelime = ['gÃ¼ndem', 'haber', 'son dakika', 'gÃ¼ncel', 'olay', 'geliÅŸme'];
-      if (gundemKelime.some(kw => text.includes(kw))) {
-        return 'gÃ¼ndem';
-      }
-      // DiÄŸer kategorilere bak
-      const categoryKeywords = {
-        spor: ['spor', 'futbol', 'basketbol', 'tenis', 'voleybol', 'atletizm', 'takÄ±m', 'lig', 'maÃ§', 'gol', 'ÅŸampiyon', 'futbolcu', 'antrenÃ¶r'],
-        teknoloji: ['teknoloji', 'yapay zeka', 'ai', 'yazÄ±lÄ±m', 'donanÄ±m', 'telefon', 'bilgisayar', 'internet', 'dijital', 'uygulama', 'app', 'siber'],
-        saÄŸlÄ±k: ['saÄŸlÄ±k', 'hastane', 'doktor', 'tedavi', 'ilaÃ§', 'virÃ¼s', 'hastalÄ±k', 'aÅŸÄ±', 'saÄŸlÄ±k bakanlÄ±ÄŸÄ±', 'ameliyat', 'zehir', 'zehirlenme', 'entÃ¼be', 'gÃ¼zellik', 'botoks', 'dermatoloji'],
-        siyaset: ['siyaset', 'parti', 'seÃ§im', 'meclis', 'bakan', 'cumhurbaÅŸkanÄ±', 'baÅŸbakan', 'milletvekili', 'oy', 'seÃ§men'],
-        kÃ¼ltÃ¼r: ['kÃ¼ltÃ¼r', 'sanat', 'sinema', 'mÃ¼zik', 'kitap', 'tiyatro', 'sergi', 'konser', 'film', 'dizi'],
-        dÃ¼nya: ['dÃ¼nya', 'uluslararasÄ±', 'abd', 'avrupa', 'rusya', 'Ã§in', 'nato', 'bm', 'birleÅŸmiÅŸ milletler', 'avrupa birliÄŸi']
-      };
-      
-      for (const [category, keywords] of Object.entries(categoryKeywords)) {
-        if (keywords.some(keyword => text.includes(keyword))) {
-          return category;
-        }
-      }
-      
-      return 'gÃ¼ndem';
-    }
-    // Kaynak ekonomi deÄŸilse, normal kategori tespitine devam et
-  }
-  
-  // Kaynak kategorisini kullan (ama ekonomi iÃ§in Ã§ok sÄ±kÄ± kontrol)
-  if (sourceCategory && sourceCategory !== 'gÃ¼ndem') {
-    if (sourceCategory === 'ekonomi') {
-      const ekonomiKeywords = ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'ÅŸirket', 'yatÄ±rÄ±m', 'kredi', 'bÃ¼tÃ§e', 'maliye', 'finans', 'bankacÄ±lÄ±k', 'hisse', 'senedi', 'endeks', 'hisse senedi', 'dÃ¶viz', 'altÄ±n', 'petrol', 'enerji', 'sanayi', 'Ã¼retim', 'ihracat', 'ithalat', 'gdp', 'gsyh', 'kara para', 'aklama', 'coino', 'kripto', 'bitcoin', 'kripto para'];
-      const ekonomiKelimeSayisi = ekonomiKeywords.filter(kw => text.includes(kw)).length;
-      
-      // BaÅŸlÄ±kta ekonomi kelimesi kontrolÃ¼
-      const baslikEkonomi = item.title.toLowerCase().includes('ekonomi') || 
-                           item.title.toLowerCase().includes('borsa') || 
-                           item.title.toLowerCase().includes('dolar') ||
-                           item.title.toLowerCase().includes('enflasyon') ||
-                           item.title.toLowerCase().includes('faiz') ||
-                           item.title.toLowerCase().includes('kara para') ||
-                           item.title.toLowerCase().includes('aklama');
-      
-      // En az 2 ekonomi kelimesi olmalÄ± VEYA baÅŸlÄ±kta ekonomi kelimesi olmalÄ±
-      // AyrÄ±ca ekonomi olmayan kelimeler olmamalÄ± (yukarÄ±da kontrol edildi)
-      if (ekonomiKelimeSayisi < 2 && !baslikEkonomi) {
-        return 'gÃ¼ndem';
-      }
-      
-      // EÄŸer ekonomi kelimeleri varsa ama ekonomi olmayan kelimeler de varsa, gÃ¼ndem yap
-      if (ekonomiOlmayanSkor > 0 && ekonomiKelimeSayisi < 3) {
-        return 'gÃ¼ndem';
-      }
-    }
-    return sourceCategory;
-  }
-  
-  // BaÅŸlÄ±k ve iÃ§erikten kategori tespiti
+  if (sourceCategory === "karaman") return "karaman";
+
+  const text = `${item.title} ${item.description || ""}`.toLocaleLowerCase('tr-TR');
+
   const categoryKeywords = {
-    spor: ['spor', 'futbol', 'basketbol', 'tenis', 'voleybol', 'atletizm', 'takÄ±m', 'lig', 'maÃ§', 'gol', 'ÅŸampiyon', 'futbolcu', 'antrenÃ¶r'],
-    ekonomi: ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'ÅŸirket', 'yatÄ±rÄ±m', 'kredi', 'bÃ¼tÃ§e', 'maliye', 'finans', 'bankacÄ±lÄ±k', 'hisse', 'senedi', 'endeks', 'dÃ¶viz', 'altÄ±n', 'petrol'],
-    teknoloji: ['teknoloji', 'yapay zeka', 'ai', 'yazÄ±lÄ±m', 'donanÄ±m', 'telefon', 'bilgisayar', 'internet', 'dijital', 'uygulama', 'app', 'siber'],
-    saÄŸlÄ±k: ['saÄŸlÄ±k', 'hastane', 'doktor', 'tedavi', 'ilaÃ§', 'virÃ¼s', 'hastalÄ±k', 'aÅŸÄ±', 'saÄŸlÄ±k bakanlÄ±ÄŸÄ±', 'ameliyat', 'tedavi'],
-    siyaset: ['siyaset', 'parti', 'seÃ§im', 'meclis', 'bakan', 'cumhurbaÅŸkanÄ±', 'baÅŸbakan', 'milletvekili', 'oy', 'seÃ§men'],
-    kÃ¼ltÃ¼r: ['kÃ¼ltÃ¼r', 'sanat', 'sinema', 'mÃ¼zik', 'kitap', 'tiyatro', 'sergi', 'konser', 'film', 'dizi'],
-    dÃ¼nya: ['dÃ¼nya', 'uluslararasÄ±', 'abd', 'avrupa', 'rusya', 'Ã§in', 'nato', 'bm', 'birleÅŸmiÅŸ milletler', 'avrupa birliÄŸi']
+    ekonomi: ['ekonomi', 'borsa', 'dolar', 'euro', 'tl', 'enflasyon', 'faiz', 'piyasa', 'yatırım', 'kredi', 'bütçe', 'maliye', 'finans', 'bankacılık', 'hisse', 'senedi', 'endeks', 'döviz', 'altın', 'petrol', 'enerji', 'sanayi'],
+    spor: ['spor', 'futbol', 'basketbol', 'tenis', 'voleybol', 'atletizm', 'takım', 'lig', 'maç', 'gol', 'şampiyon', 'futbolcu', 'antrenör'],
+    teknoloji: ['teknoloji', 'yapay zeka', 'ai', 'yazılım', 'donanım', 'telefon', 'bilgisayar', 'internet', 'dijital', 'uygulama', 'siber'],
+    sağlık: ['sağlık', 'hastane', 'doktor', 'tedavi', 'ilaç', 'virüs', 'hastalık', 'aşı', 'sağlık bakanlığı', 'ameliyat'],
+    siyaset: ['siyaset', 'parti', 'seçim', 'meclis', 'bakan', 'cumhurbaşkanı', 'başbakan', 'milletvekili', 'oy', 'seçmen'],
+    kültür: ['kültür', 'sanat', 'sinema', 'müzik', 'kitap', 'tiyatro', 'sergi', 'konser', 'film', 'dizi'],
+    dünya: ['dünya', 'uluslararası', 'abd', 'avrupa', 'rusya', 'çin', 'nato', 'bm', 'birleşmiş milletler', 'avrupa birliği']
   };
-  
-  // Her kategori iÃ§in skor hesapla
-  const categoryScores = {};
+
+  const scores = {};
   for (const [category, keywords] of Object.entries(categoryKeywords)) {
-    const score = keywords.filter(keyword => text.includes(keyword)).length;
-    if (score > 0) {
-      categoryScores[category] = score;
+    scores[category] = keywords.filter((kw) => text.includes(kw)).length;
+  }
+
+  let bestCategory = sourceCategory || 'gündem';
+  let bestScore = scores[bestCategory] || 0;
+
+  for (const [category, score] of Object.entries(scores)) {
+    if (score > bestScore) {
+      bestCategory = category;
+      bestScore = score;
     }
   }
-  
-  // En yÃ¼ksek skora sahip kategoriyi dÃ¶ndÃ¼r
-  if (Object.keys(categoryScores).length > 0) {
-    const bestCategory = Object.entries(categoryScores).sort((a, b) => b[1] - a[1])[0][0];
-    return bestCategory;
-  }
-  
-  return sourceCategory || 'gÃ¼ndem';
+
+  return bestScore > 0 ? bestCategory : (sourceCategory || 'gündem');
 }
+
 
 function getTagValue(block, tag) {
   const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i');
@@ -785,3 +709,36 @@ async function attachGeminiSummaries(items) {
 }
 
 
+// Override detectCategory with ASCII-safe keywords to avoid encoding issues
+function detectCategory(item, sourceCategory) {
+  if (sourceCategory === 'karaman') return 'karaman';
+
+  const text = ((item.title || '') + ' ' + (item.description || '')).toLocaleLowerCase('tr-TR');
+
+  const categoryKeywords = {
+    ekonomi: ['ekonomi','borsa','dolar','euro','tl','enflasyon','faiz','piyasa','yatirim','kredi','butce','maliye','finans','bankacilik','hisse','senedi','endeks','doviz','altin','petrol','enerji','sanayi'],
+    spor: ['spor','futbol','basketbol','tenis','voleybol','atletizm','takim','lig','mac','gol','sampiyon','futbolcu','antrenor'],
+    teknoloji: ['teknoloji','yapay zeka','ai','yazilim','donanim','telefon','bilgisayar','internet','dijital','uygulama','siber'],
+    saglik: ['saglik','hastane','doktor','tedavi','ilac','virus','hastalik','asi','saglik bakanligi','ameliyat'],
+    siyaset: ['siyaset','parti','secim','meclis','bakan','cumhurbaskani','basbakan','milletvekili','oy','secmen'],
+    kultur: ['kultur','sanat','sinema','muzik','kitap','tiyatro','sergi','konser','film','dizi'],
+    dunya: ['dunya','uluslararasi','abd','avrupa','rusya','cin','nato','bm','birlesmis milletler','avrupa birligi']
+  };
+
+  const scores = {};
+  for (const [category, keywords] of Object.entries(categoryKeywords)) {
+    scores[category] = keywords.filter((kw) => text.includes(kw)).length;
+  }
+
+  let bestCategory = sourceCategory || 'gundem';
+  let bestScore = scores[bestCategory] || 0;
+
+  for (const [category, score] of Object.entries(scores)) {
+    if (score > bestScore) {
+      bestCategory = category;
+      bestScore = score;
+    }
+  }
+
+  return bestScore > 0 ? bestCategory : (sourceCategory || 'gundem');
+}
