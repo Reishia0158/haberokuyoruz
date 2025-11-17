@@ -158,7 +158,8 @@ async function loadCuratedNews() {
   if (newsGrid) newsGrid.innerHTML = '';
 
   try {
-    const res = await fetch('/api/news?sort=importance&importanceMin=6&limit=60');
+    // importanceMin=0: ai önem puanı gelmese bile haberleri göster
+    const res = await fetch('/api/news?sort=importance&importanceMin=0&limit=60');
     if (!res.ok) {
       throw new Error(`Sunucu hatası: ${res.status}`);
     }

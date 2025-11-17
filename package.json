@@ -5,7 +5,8 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "discover:sources": "node scripts/discover-sources.js"
   },
   "keywords": [
     "haber",

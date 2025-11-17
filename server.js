@@ -20,45 +20,12 @@ import {
   searchAndGenerateNews,
   generateTrendingNews 
 } from './lib/ai-researcher.js';
+import { getSources, warmupSources, refreshSourcesWithAI } from './lib/source-manager.js';
 
 const PORT = process.env.PORT || 3000;
 const CACHE_TTL = 3 * 60 * 1000; // 3 minutes (daha sÄ±k gÃ¼ncelleme)
 const MAX_RESULTS = 200;
 const DISABLE_RSS = (process.env.DISABLE_RSS || 'false').toLowerCase() === 'true';
-
-const RSS_SOURCES = [
-  { name: 'TRT Haber', url: 'https://www.trthaber.com/manset.rss', category: 'gÃ¼ndem' },
-  { name: 'Anadolu AjansÄ±', url: 'https://www.aa.com.tr/tr/rss/default?cat=guncel', category: 'gÃ¼ndem' },
-  { name: 'HabertÃ¼rk', url: 'https://www.haberturk.com/rss/manset.xml', category: 'gÃ¼ndem' },
-  { name: 'NTV', url: 'https://www.ntv.com.tr/gundem.rss', category: 'gÃ¼ndem' },
-  { name: 'SÃ¶zcÃ¼', url: 'https://www.sozcu.com.tr/rss/anasayfa.xml', category: 'gÃ¼ndem' },
-  { name: 'Sabah', url: 'https://www.sabah.com.tr/rss/gundem.xml', category: 'gÃ¼ndem' },
-  { name: 'HÃ¼rriyet', url: 'https://www.hurriyet.com.tr/rss/gundem', category: 'gÃ¼ndem' },
-  { name: 'Milliyet', url: 'https://www.milliyet.com.tr/rss/rssNew/gundemRSS.xml', category: 'gÃ¼ndem' },
-  { name: 'Cumhuriyet', url: 'https://www.cumhuriyet.com.tr/rss/son_dakika.xml', category: 'gÃ¼ndem' },
-  { name: 'Yeni Åafak', url: 'https://www.yenisafak.com/rss/gundem.xml', category: 'gÃ¼ndem' },
-  { name: 'Takvim', url: 'https://www.takvim.com.tr/rss/guncel.xml', category: 'gÃ¼ndem' },
-  { name: 'Star', url: 'https://www.star.com.tr/rss/gundem.xml', category: 'gÃ¼ndem' },
-  { name: 'Mynet Haber', url: 'https://www.mynet.com/haber/rss/kategori/gundem', category: 'gÃ¼ndem' },
-  { name: 'SonDakika.com', url: 'https://www.sondakika.com/rss/', category: 'gÃ¼ndem' },
-  { name: 'En Son Haber', url: 'https://www.ensonhaber.com/rss/ensonhaber.xml', category: 'gÃ¼ndem' },
-  { name: 'CNN TÃ¼rk', url: 'https://www.cnnturk.com/feed/rss/turkiye/news', category: 'gÃ¼ndem' },
-  { name: 'TRT Spor', url: 'https://www.trthaber.com/spor.rss', category: 'spor' },
-  { name: 'Fanatik', url: 'https://www.fanatik.com.tr/rss/spor.xml', category: 'spor' },
-  { name: 'NTV Spor', url: 'https://www.ntv.com.tr/spor.rss', category: 'spor' },
-  { name: 'Sabah Spor', url: 'https://www.sabah.com.tr/rss/spor.xml', category: 'spor' },
-  { name: 'HÃ¼rriyet Spor', url: 'https://www.hurriyet.com.tr/rss/spor', category: 'spor' },
-  { name: 'TRT Ekonomi', url: 'https://www.trthaber.com/ekonomi.rss', category: 'ekonomi' },
-  { name: 'Sabah Ekonomi', url: 'https://www.sabah.com.tr/rss/ekonomi.xml', category: 'ekonomi' },
-  { name: 'HÃ¼rriyet Ekonomi', url: 'https://www.hurriyet.com.tr/rss/ekonomi', category: 'ekonomi' },
-  { name: 'NTV Teknoloji', url: 'https://www.ntv.com.tr/teknoloji.rss', category: 'teknoloji' },
-  { name: 'TRT Teknoloji', url: 'https://www.trthaber.com/teknoloji.rss', category: 'teknoloji' },
-  { name: 'Karaman GÃ¼ndem', url: 'https://www.karamangundem.com/rss', category: 'karaman' },
-  { name: 'Karaman Haber', url: 'https://www.karamanhaber.com/feed/', category: 'karaman' },
-  { name: 'Karamandan', url: 'https://www.karamandan.com/rss', category: 'karaman' },
-  { name: 'Karaman PostasÄ±', url: 'https://www.karamanpostasi.com/rss', category: 'karaman' },
-  { name: 'Karaman ManÅŸet', url: 'https://www.karamanmanset.com/rss', category: 'karaman' }
-];
 
 const STOP_WORDS = new Set([
   've',
@@ -108,6 +75,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
+// Kaynak dosyasini hazirla
+warmupSources().catch((err) => {
+  console.warn('Kaynak hazirlama hatasi:', err.message);
+});
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
 
@@ -125,6 +97,16 @@ const server = http.createServer(async (req, res) => {
   // PopÃ¼ler haberler (AI ile otomatik Ã¼retim)
   if (url.pathname === '/api/trending') {
     await handleTrendingEndpoint(res);
+    return;
+  }
+
+  if (url.pathname === '/api/sources') {
+    await handleSourcesEndpoint(res);
+    return;
+  }
+
+  if (url.pathname === '/api/sources/discover') {
+    await handleSourcesDiscoverEndpoint(res);
     return;
   }
 
@@ -201,11 +183,12 @@ async function handleNewsEndpoint(url, res) {
     }
 
     const categories = [...new Set(items.map(item => item.category).filter(Boolean))].sort();
+    const sources = await getSources();
 
     const payload = {
       updatedAt: new Date(cache.timestamp).toISOString(),
       total: filtered.length,
-      sources: RSS_SOURCES.map((s) => s.name),
+      sources: sources.map((s) => s.name),
       categories,
       items: filtered.slice(0, limit)
     };
@@ -336,6 +319,38 @@ async function handleTrendingEndpoint(res) {
   }
 }
 
+async function handleSourcesEndpoint(res) {
+  try {
+    const sources = await getSources();
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({ total: sources.length, sources }));
+  } catch (error) {
+    console.error('Kaynak listesi hatas\u0131:', error);
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Kaynaklar al\u0131namad\u0131' }));
+  }
+}
+
+async function handleSourcesDiscoverEndpoint(res) {
+  if (!isGeminiEnabled) {
+    res.writeHead(400, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Gemini API anahtar\u0131 gerekli' }));
+    return;
+  }
+
+  try {
+    const result = await refreshSourcesWithAI();
+    cache.timestamp = 0; // sonraki istek yeni kaynaklarla fetch etsin
+    cache.items = [];
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({ status: 'ok', ...result }));
+  } catch (error) {
+    console.error('AI kaynak ke\u015Ffi hatas\u0131:', error);
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'AI kaynak ke\u015Ffi ba\u015Far\u0131s\u0131z' }));
+  }
+}
+
 async function serveStaticFile(requestPath, res) {
   try {
     // Yeni tasarÄ±m iÃ§in index-new.html'i varsayÄ±lan yap
@@ -397,14 +412,15 @@ async function getNewsItems() {
     }
 
     // RSS'den yeni haberleri Ã§ek
-    const responses = await Promise.allSettled(RSS_SOURCES.map(fetchSource));
+    const sources = await getSources();
+    const responses = await Promise.allSettled(sources.map(fetchSource));
     const collected = [];
 
     for (const result of responses) {
       if (result.status === 'fulfilled') {
         collected.push(...result.value);
       } else {
-        console.warn('Kaynak alÄ±namadÄ±:', result.reason?.message || result.reason);
+        console.warn('Kaynak alinmadi:', result.reason?.message || result.reason);
       }
     }
 
@@ -740,6 +756,13 @@ function detectCategory(item, sourceCategory) {
 
   return bestScore > 0 ? bestCategory : (sourceCategory || 'gundem');
 }
+
+
+
+
+
+
+
 
 
 
