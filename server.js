@@ -247,7 +247,7 @@ async function handleAIResearchEndpoint(req, res) {
       const hay = query.trim().toLowerCase();
       const matched = all
         .filter((item) => {
-          const text = ${item.title || ''}  .toLowerCase();
+          const text = `${item.title || ''} ${item.summary || ''} ${item.description || ''}`.toLowerCase();
           return text.includes(hay);
         })
         .slice(0, 50);
